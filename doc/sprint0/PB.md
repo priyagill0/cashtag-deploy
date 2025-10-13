@@ -1,4 +1,5 @@
 **1. Setup Login**
+
 As a returning user, I want to securely log in to my account so that I can access my saved data and continue tracking my progress.
 
 Acceptance Criteria:
@@ -7,6 +8,7 @@ Acceptance Criteria:
 - Passwords are encrypted and not stored in plain text.
 
 **2. Sign Up**
+
 As a new user, I want to create an account so that I can start using the app.
 
 Acceptance Criteria:
@@ -15,6 +17,7 @@ Acceptance Criteria:
 - Duplicate emails are not allowed.
 
 **3. Sign Out**
+
 As a logged-in user, I want to sign out of my account so that my personal information remains secure.
 
 Acceptance Criteria:
@@ -23,6 +26,7 @@ Acceptance Criteria:
 - The user cannot access protected pages without logging in again.
 
 **4. Set Goals**
+
 As a user, I want to set personal financial goals so that I can track my progress and stay on budget.
 
 Acceptance Criteria:
@@ -31,6 +35,7 @@ Acceptance Criteria:
 - The app tracks progress toward each goal based on user activity or entered data.
 
 **5. View Group Expenses**
+
 As a user, I can navigate to the “Group Expenses” page from the navigation bar so that I can easily view all shared expenses for my groups in one place.
 
 Acceptance Criteria:
@@ -40,6 +45,7 @@ Acceptance Criteria:
 
 
 **6. Create and Manage Groups**
+
 As a user, I can create a new group and invite members to join using their username once the group is created so that we can collaboratively manage and track our shared expenses.
 
 Acceptance Criteria:
@@ -48,6 +54,7 @@ Acceptance Criteria:
 - All group members can view shared expenses within that group.
 
 **7. Dashboard - add bar graph of expenses**
+
 As a user, I want to see a bar graph of my expenses for each month so that I can easily understand my spending trends and distribution.
 
 Acceptance Criteria:
@@ -55,6 +62,7 @@ Acceptance Criteria:
 - The graph updates automatically when new expenses are added, edited, or deleted.
 
 **8. Piechart with interactive Legend**
+
 As a user, I can click on a category in the pie chart legend to view all expenses belonging to that category so that I can easily see detailed spending for specific areas.
 
 Acceptance Criteria:
@@ -63,6 +71,7 @@ Acceptance Criteria:
 - Clicking a category redirects the user to a filtered list or page showing all expenses for that category.
 
 **9. View the history of expenses**
+
 As a user, I can navigate to the “Expense History” page from the navigation bar so that I can review all my past transactions in one place.
 
 Acceptance Criteria:
@@ -71,6 +80,7 @@ Acceptance Criteria:
 - The transaction history updates automatically when new expenses are added or deleted.
 
 **10. View history of goals/budgets**
+
 As a user, I can navigate to the “Goals/Budget History” page from the navigation bar so that I can view my past goals from previous months.
 
 Acceptance Criteria:
@@ -79,6 +89,7 @@ Acceptance Criteria:
 - Historical data remains accessible even after goals are completed or expired.
 
 **11. Add and Split Group Expense**
+
 As a user, I can log a shared expense and automatically split the cost among all group members so that everyone knows how much they owe to the person who added the shared expense.
 
 Acceptance Criteria:
@@ -88,6 +99,7 @@ Acceptance Criteria:
 - After submission, each member’s balance is updated to reflect how much they owe or are owed.
 
 **12. Dynamic Debt Calculation and Summary**
+
 The system will automatically calculate who owes who within the group and display the results clearly in a message or summary section so that everyone can easily settle balances. For example, instead of showing raw debts: “A owes B $50, B owes C $30”, the user will see optimized transactions: A → C $20.
 
 Acceptance Criteria:
@@ -97,6 +109,7 @@ Acceptance Criteria:
 - If a group has no outstanding debts, the summary shows “All settled” or an equivalent message.
 
 **13. Badges and Achievements**
+
 As a user, I want to view my profile and see all the badges and achievements that I’ve earned, so that I can stay motivated and feel rewarded for keeping up with my budgeting goals.
 
 Criteria Of Satisfaction:
@@ -105,6 +118,7 @@ Criteria Of Satisfaction:
 - Badges should update automatically when new achievements are unlocked.
 
 **14. Alert Notifications for Budget Limits**
+
 As Stacie (a roommate who shares expenses), I want to receive an alert notification when I’m close to exceeding any of my monthly budgets (ex: shopping, entertainment, groceries), so that I can adjust my spending before going over my limit.
 
 Criteria Of Satisfaction:
@@ -114,6 +128,7 @@ Criteria Of Satisfaction:
 - The alert should automatically disappear once the budget resets for the next month/period.
 
 **15. Generate End-of-Month Spending Report**
+
 As the traveller, I want to generate an end-of-month spending report that compares this month to previous months, so that I can  plan my future spending better.
 
 Criteria Of Satisfaction:
@@ -121,6 +136,7 @@ Criteria Of Satisfaction:
 - Users should see insights like “biggest expense category” or “% change from last month.”
 
 **16. Create a new expense and add tag**
+
 As a user, I want to be able to create a new expense and tag it with a category (like “Food,” “Transportation,” or “Entertainment”) so I can easily track and organize my spending.
 
 Acceptance Criteria:
@@ -129,6 +145,7 @@ Acceptance Criteria:
 - Each expense shows its assigned category.
 
 **17. Edit/Delete an Expense**
+
 As a user, I want to edit or delete an existing expense so I can fix errors or remove expenses that are no longer relevant.
 
 Acceptance Criteria
@@ -137,6 +154,7 @@ Acceptance Criteria
 - The total and category summaries update automatically after an edit or deletion.
 
 **18. Add Recurring Monthly Expenses**
+
 As a user, I want to set up recurring monthly expenses (like rent or subscriptions) so I don’t have to manually add them every month.
 
 Acceptance Criteria
@@ -144,6 +162,7 @@ Acceptance Criteria
 - The recurring expenses automatically appear in future months.
 
 **19. Create Dashboard (current month - default)**
+
 As a user, I want the dashboard to display my current month’s expenses by default so I can quickly see my recent spending and budget progress.
 
 Acceptance Criteria
@@ -152,6 +171,7 @@ Acceptance Criteria
 - The dashboard updates automatically when new expenses are added, edited, or deleted.
 
 **20. View Profile**
+
 As a user, I want to view my profile to see my personal information and account details, so that I can  manage my account.
 
 Criteria Of Satisfaction:
