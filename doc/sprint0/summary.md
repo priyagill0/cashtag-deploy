@@ -57,6 +57,12 @@ Promote financial responsibility through goal-setting and progress insights.
     - Motivational messages (ex. “You are on the way to saving enough for your dream trip”)
 
     - Group challenges (ex. “As a group, let’s save $100 this month on food.”)
+      
+### Core Principles
+- **Simplicity:** Keep interactions intuitive and efficient.
+- **Engagement:** Use gamification to motivate continued use.
+- **Flexibility:** Support both personal and group-based finances.
+- **Transparency:** Provide clear and visual insights into spending and goals.
 
 By merging personal budgeting and group expense management into one application, this will allow users to gain better control over their finances, maintain fairness when splitting costs between multiple people, and build practical budgeting habits all while having fun through the gamified experience.
 
