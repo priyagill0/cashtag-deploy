@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,13 +28,13 @@ public class ExpenseController {
 
     //   get all expenses for specified user
     @GetMapping("/user/{userId}")
-    public List<Expense> getExpensesByUser(@PathVariable Long userId) {
+    public List<Expense> getExpensesByUser(@PathVariable UUID userId) {
         return expenseRepository.findByUserId(userId);
     }
 
     @PostMapping
     public Expense addExpense(@RequestBody Expense expense) {
-        Long userId = expense.getUserId();
+        UUID userId = expense.getUserId();
         if (userId == null) {
             throw new RuntimeException("userId missing in request");
         }

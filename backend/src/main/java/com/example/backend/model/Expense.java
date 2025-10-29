@@ -1,6 +1,7 @@
 package com.example.backend.model;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -32,10 +33,10 @@ public class Expense {
     // @JoinColumn(name = "user_id", nullable = false) // foreign key column (user_id) in expenses table
     // private User user;
 
-    private Long userId; // store userId directly
+    private UUID userId; // store userId directly
     
     public Expense() {}
-    public Expense(String description, double amount, Category category, LocalDate date, Long userId) {
+    public Expense(String description, double amount, Category category, LocalDate date, UUID userId) {
         this.description = description;
         this.amount = amount;
         this.category = category;
@@ -48,11 +49,11 @@ public class Expense {
         return id;
     }
 
-    public Long getUserId() {
+    public UUID getUserId() {
         return userId;
     }
     
-    public void setUserId(Long userId) {
+    public void setUserId(UUID userId) {
         this.userId = userId;
     }
 

@@ -5,7 +5,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <nav className="p-4 bg-gray-200 flex gap-4">
+        <nav style={{ backgroundColor: "#9BC5DD" }} className="p-4 flex gap-4">
           <Link href="/">Home</Link>
           <Link href="/login">Login</Link>
           <Link href="/message">Message</Link>

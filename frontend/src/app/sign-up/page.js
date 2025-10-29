@@ -4,6 +4,9 @@ import { supabase } from "../../utils/supabase/client";
 
 export default function Login() {
   const [email, setEmail] = useState("");
+
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
@@ -15,7 +18,13 @@ export default function Login() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-      });
+        options: {
+        data: {
+          firstname: firstname,  // Store in user metadata
+          lastname: lastname
+        }
+      }
+ });
 
       if (error) throw error;
 
@@ -24,19 +33,31 @@ export default function Login() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          id: data.user.id,
-          email: email
+            id: data.user.id,
+            email: email,
+          firstname: firstname,
+          lastname: lastname,
+          created_at: data.user.created_at
+          
         }),
       });
-
-      if (!res.ok) throw new Error("Failed to save user to backend");
-      
-      const result = await res.json();
+         console.log("Backend response status:", res.status); // Debug log
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Backend error:", errorText); // Debug log
+      throw new Error(`Failed to save user to backend: ${errorText}`);
+    }
+    
+    const result = await res.json();
+    console.log("Backend saved user:", result); // Debug log
+    
       setMessage(`User created successfully ID: ${result.id}`);
       
       // Clear form
       setEmail("");
-      
+      setFirstname("");
+      setLastname("");
       setPassword("");
       
     } catch (err) {
@@ -55,7 +76,36 @@ export default function Login() {
       </div>
       
       <form className="flex flex-col space-y-4" onSubmit={handleSubmit}>
-        
+        <div className="flex flex-col space-y-2">
+          <label htmlFor="firstname" className="text-sm font-medium text-gray-500">
+            First Name
+          </label>
+          <input
+            type="text"
+            id="firstname"
+            placeholder="your first name"
+            value={firstname}
+            onChange={(e) => setFirstname(e.target.value)}
+            className="w-full border rounded p-2 text-gray-400"
+            required
+          />
+        </div>
+
+         <div className="flex flex-col space-y-2">
+          <label htmlFor="lastname" className="text-sm font-medium text-gray-500">
+            Last Name
+          </label>
+          <input
+            type="text"
+            id="lastname"
+            placeholder="your last name"
+            value={lastname}
+            onChange={(e) => setLastname(e.target.value)}
+            className="w-full border rounded p-2 text-gray-400"
+            required
+          />
+        </div>
+
 
         <div className="flex flex-col space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-gray-500">
@@ -91,7 +141,7 @@ export default function Login() {
         
         <button
           type="submit"
-          className="w-full py-2 rounded-full font-medium text-white transition"
+          className="w-full py-2 rounded-full font-medium text-white transition cursor-pointer"
           style={{ backgroundColor: '#9BC5DD' }}
         >
           Create Account
@@ -99,8 +149,8 @@ export default function Login() {
       </form>
       
       <p className="text-center text-sm text-gray-500 mt-4">
-        Don't have an account?{" "}
-        <a href="/sign-up" className="text-[#28799B] font-bold">Sign up</a>
+        Already have an account?{" "}
+        <a href="/login" className="text-[#28799B] font-bold">Log in</a>
       </p>
     </div>
   );
