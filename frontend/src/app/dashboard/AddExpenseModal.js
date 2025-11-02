@@ -21,35 +21,30 @@ export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
 
   //submit the form
   const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const expense = {
-      description: title,
-      amount: parseFloat(amount),
-      category: category.toUpperCase(), 
-      date: new Date().toISOString().split("T")[0],
-      userId: "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba", 
+    e.preventDefault(); 
+    const expense = { 
+      description: title, 
+      amount: parseFloat(amount), 
+      category, 
+      date: new Date().toISOString().split("T")[0] //add today's date
     };
 
     try {
       const res = await fetch("http://localhost:8080/api/expense", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(expense),
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify(expense), 
       });
 
       if (res.ok) {
-        setTitle("");
+        setTitle(""); 
         setAmount("");
         setCategory("");
-        onExpenseAdded();
+        onExpenseAdded(); 
         onClose();
-      } else {
-        const errorText = await res.text();
-        console.error("Server returned:", errorText);
       }
     } catch (err) {
-      console.error("Error adding expense", err);
+      console.error("Error adding expense", err); // log any errors
     }
   };
 
