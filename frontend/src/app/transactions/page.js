@@ -1,145 +1,255 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-const EXPENSES_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/expense/user/${process.env.NEXT_PUBLIC_USER_ID}`;
+const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+const USER_ID =
+  process.env.NEXT_PUBLIC_USER_ID ||
+  "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
 
 export default function TransactionsPage() {
   const [rows, setRows] = useState([]);
+  const [pageInfo, setPageInfo] = useState({
+    number: 0,
+    size: 5,          // default rows per page
+    totalPages: 1,
+  });
+  const [totalElements, setTotalElements] = useState(0);
+  const [q, setQ] = useState("");
+  const [category, setCategory] = useState("");
+  const [sort, setSort] = useState("date,desc");
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [sizeChoice, setSizeChoice] = useState("5"); // 5 or 10 or 20 or All expenses on one page
 
-  const load = useCallback(async () => {
+  
+  // Load categories from backend enum
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API}/api/expense/categories`);
+        if (!res.ok) throw new Error("Failed to load categories");
+        setCategories(await res.json());
+      } catch (e) {
+        console.error("Category load error:", e);
+      }
+    })();
+  }, []);
+
+  // Fetch transactions with the pages option
+  const fetchPage = async (page = 0, size = pageInfo.size) => {
     try {
       setLoading(true);
-      const res = await fetch(EXPENSES_URL, { cache: "no-store" });
+      setErr("");
 
+      // If "All" is selected, this is to get everything
+      const effectiveSize =
+        sizeChoice === "ALL" ? 999999 : Number(size || pageInfo.size);
+
+      const params = new URLSearchParams({
+        page: String(page),
+        size: String(effectiveSize),
+        sort,
+      });
+      if (q) params.set("q", q);
+      if (category) params.set("category", category);
+
+      const url = `${API}/api/expense/user/${USER_ID}?${params.toString()}`;
+      const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) {
-        console.error("Failed to fetch expenses:", res.status);
-        setRows([]);
-        return;
+        const txt = await res.text();
+        throw new Error(`${res.status} ${res.statusText} → ${txt}`);
       }
 
       const data = await res.json();
-      setRows(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Error fetching expenses:", err);
+
+      if (Array.isArray(data)) {
+        setRows(data);
+        setTotalElements(data.length);
+        setPageInfo({ number: 0, size: data.length, totalPages: 1 });
+      } else {
+        // Spring Page
+        setRows(data.content || []);
+        setTotalElements(data.totalElements ?? (data.content?.length || 0));
+
+        // If "All", force single page display
+        if (sizeChoice === "ALL") {
+          setPageInfo({
+            number: 0,
+            size: data.totalElements ?? effectiveSize,
+            totalPages: 1,
+          });
+        } else {
+          setPageInfo({
+            number: data.number ?? 0,
+            size: data.size ?? effectiveSize,
+            totalPages: data.totalPages ?? 1,
+          });
+        }
+      }
+    } catch (e) {
+      setErr(e.message || String(e));
       setRows([]);
+      setTotalElements(0);
+      setPageInfo({ number: 0, size: 5, totalPages: 1 });
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
+  // Re-fetch to filters/sort/page size choice changes
   useEffect(() => {
-    load();
+    // reset to first page whenever criteria changes
+    const newSize = sizeChoice === "ALL" ? pageInfo.size : Number(sizeChoice);
+    setPageInfo((p) => ({ ...p, number: 0, size: newSize }));
+    fetchPage(0, newSize);
+  }, [q, category, sort, sizeChoice]);
 
-    // Auto-refresh every 8 seconds + reload when tab refocuses
-    const t = setInterval(load, 8000);
-    const onFocus = () => load();
-    const onVisible = () => document.visibilityState === "visible" && load();
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      clearInterval(t);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [load]);
+  const fmt = (n) => {
+    const x = Number(n);
+    if (!isFinite(x)) return "—";
+    return `$${x.toFixed(2)}`;
+  };
 
-  const total = useMemo(
-    () => rows.reduce((s, r) => s + Number(r.amount || 0), 0),
-    [rows]
-  );
+  const pagingDisabled = sizeChoice === "ALL";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f5f7fa] p-6">
-      <div className="w-full max-w-4xl bg-white rounded-3xl p-8 shadow-md">
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-[#28799B]">
-            Expense History
-          </h1>
-          <p className="text-gray-500 pt-2">
-            Review all your past transactions
-          </p>
-        </header>
+    // matched log in page ui
+    <main className="min-h-screen bg-black flex items-start sm:items-center justify-center px-4 py-10">
+      <div className="w-full max-w-5xl bg-white text-black rounded-3xl shadow-2xl p-6 md:p-8">
+        <h1 className="text-3xl font-bold text-center text-[#28799B] mb-6">
+          Transactions
+        </h1>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-[#9BC5DD]/30">
-              <tr>
-                <Th>Date</Th>
-                <Th>Description</Th>
-                <Th>Category</Th>
-                <Th className="text-right w-32">Amount ($)</Th>
-              </tr>
-            </thead>
-            <tbody className="divide-y bg-white">
-              {loading && (
-                <tr>
-                  <td colSpan={4} className="p-6 text-center text-gray-500">
-                    Loading…
-                  </td>
-                </tr>
-              )}
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="p-6 text-center text-gray-500">
-                    No transactions yet
-                  </td>
-                </tr>
-              )}
-              {rows.map((e) => (
-                <tr key={e.id} className="hover:bg-[#f0f8fc] transition">
-                  <Td>
-                    {new Date((e.date || "") + "T00:00:00").toLocaleDateString()}
-                  </Td>
-                  <Td>{e.description || "—"}</Td>
-                  <Td>
-                    <Badge>{e.category}</Badge>
-                  </Td>
-                  <Td className="text-right font-semibold text-[#28799B]">
-                    ${Number(e.amount).toFixed(2)}
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 mb-6 justify-center">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search description…"
+            className="border rounded px-3 py-2 text-black placeholder:text-gray-400"
+          />
 
-        <div className="text-right text-gray-600 mt-4">
-          <span className="font-semibold">Total:</span> ${total.toFixed(2)}
-        </div>
-
-        <div className="text-center mt-6">
-          <a
-            href="/"
-            className="inline-block text-[#28799B] font-bold hover:underline"
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="border rounded px-3 py-2 text-black"
           >
-            ← Back to Home
-          </a>
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="border rounded px-3 py-2 text-black"
+          >
+            <option value="date,desc">Newest first</option>
+            <option value="date,asc">Oldest first</option>
+            <option value="amount,desc">Amount high to low</option>
+            <option value="amount,asc">Amount low to high</option>
+          </select>
+
+          {/* Rows per page */}
+          <select
+            value={sizeChoice}
+            onChange={(e) => setSizeChoice(e.target.value)}
+            className="border rounded px-3 py-2 text-black"
+            title="Rows per page"
+          >
+            <option value="5">5 / page</option>
+            <option value="10">10 / page</option>
+            <option value="20">20 / page</option>
+            <option value="ALL">All</option>
+          </select>
+        </div>
+
+        {/* If any Error */}
+        {err && (
+          <div className="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm">
+            <div className="font-semibold">Couldn’t load transactions</div>
+            <div className="opacity-80 break-all">{err}</div>
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div className="animate-pulse text-gray-600 mb-2 text-center">
+            Loading…
+          </div>
+        )}
+
+        {/* Table */}
+        {!loading && rows.length > 0 && !err && (
+          <div className="overflow-x-auto border rounded-2xl">
+            <table className="min-w-full border-collapse text-sm">
+              <thead className="bg-gray-100 text-gray-800 font-semibold">
+                <tr>
+                  <th className="px-4 py-2 border">Date</th>
+                  <th className="px-4 py-2 border">Category</th>
+                  <th className="px-4 py-2 border">Description</th>
+                  <th className="px-4 py-2 border text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((e) => (
+                  <tr
+                    key={e.id ?? `${e.date}-${e.description}-${e.amount}`}
+                    className="hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-2 border text-gray-700">{e.date}</td>
+                    <td className="px-4 py-2 border text-gray-700">
+                      {String(e.category || "—")}
+                    </td>
+                    <td className="px-4 py-2 border text-gray-700">
+                      {e.description || "—"}
+                    </td>
+                    <td className="px-4 py-2 border text-right font-medium">
+                      {fmt(e.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!loading && rows.length === 0 && !err && (
+          <div className="text-gray-600 text-center">No transactions found.</div>
+        )}
+
+        {/* Pages */}
+        <div className="flex items-center justify-center gap-3 mt-6">
+          <button
+            disabled={pagingDisabled || pageInfo.number <= 0}
+            onClick={() => fetchPage(pageInfo.number - 1, pageInfo.size)}
+            className="border rounded px-3 py-1 disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span>
+            Page {pageInfo.number + 1} / {Math.max(pageInfo.totalPages, 1)}
+          </span>
+          <button
+            disabled={pagingDisabled || pageInfo.number + 1 >= pageInfo.totalPages}
+            onClick={() => fetchPage(pageInfo.number + 1, pageInfo.size)}
+            className="border rounded px-3 py-1 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+
+        <div className="mt-4 text-xs text-gray-500 text-center">
+          Showing {rows.length} of {totalElements} items
+          {sizeChoice === "ALL" ? " (all on one page)" : ""}
+          <span className="ml-2">• API: {API}</span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Th({ children, className = "" }) {
-  return (
-    <th
-      className={`px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider text-[#28799B] ${className}`}
-    >
-      {children}
-    </th>
-  );
-}
-
-function Td({ children, className = "" }) {
-  return <td className={`px-4 py-3 text-sm text-gray-700 ${className}`}>{children}</td>;
-}
-
-function Badge({ children }) {
-  return (
-    <span className="inline-flex rounded-full bg-[#9BC5DD]/40 px-2.5 py-0.5 text-xs font-medium text-[#28799B]">
-      {children}
-    </span>
+    </main>
   );
 }
