@@ -10,18 +10,26 @@ export default function Dashboard() {
  const [isModalOpen, setIsModalOpen] = useState(false);
  const [expenses, setExpenses] = useState([]);
  const [refresh, setRefresh] = useState(false);
+ const [userId, setUserId] = useState(null);
 
+ useEffect(() => {
+    const id =
+      (typeof window !== "undefined" && localStorage.getItem("userId")) ||
+      "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba"; // fallback user
+    setUserId(id); // store it in state
+  }, []);
 
  const handleExpenseAdded = () => setRefresh(!refresh);
 
 
  useEffect(() => {
    const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
+   if (!userId) return;
    fetch(`http://localhost:8080/api/expense/user/${userId}?all=true`)
      .then((res) => res.json())
      .then((data) => setExpenses(data))
      .catch((err) => console.error("Error fetching expenses:", err));
- }, [refresh]);
+ }, [refresh, userId]);
 
 
  return (
@@ -39,7 +47,7 @@ export default function Dashboard() {
 
 
      {/* bar chart */}
-     <BarChartComponent />
+     {userId && <BarChartComponent userId={userId} refreshKey={refresh} />}
 
 
      {/*temporary recent expenses section */}

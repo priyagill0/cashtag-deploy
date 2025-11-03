@@ -20,13 +20,13 @@ const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 const TEST_USER_ID = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
 
 
-export default function BarChartComponent() {
+export default function BarChartComponent({ userId, refreshKey }) {
  const [chartData, setChartData] = useState({ labels: [], datasets: [] });
 
 
  useEffect(() => {
    // Try to get user ID from login or use test one
-   const userId = localStorage.getItem("userId") || TEST_USER_ID;
+   const id = userId || localStorage.getItem("userId") || TEST_USER_ID;
 
 
     // Fetch all expenses from backend for this user
@@ -71,12 +71,18 @@ export default function BarChartComponent() {
        });
      })
      .catch(() => setChartData({ labels: [], datasets: [] }));
- }, []);
+ }, [userId, refreshKey]);
 
+ // Dynamic y-axis 
+ const maxValue =
+    chartData.datasets[0]?.data?.length > 0
+      ? Math.max(...chartData.datasets[0].data.map(Number))
+      : 0;
 
  const options = {
    responsive: true,
    maintainAspectRatio: false,
+   layout: { padding: { top: 60, right: 8, bottom: 28, left: 8 } },
    plugins: {
      legend: { display: false },
      tooltip: {
@@ -91,7 +97,13 @@ export default function BarChartComponent() {
        formatter: (v) => `$${v}`,
      },
    },
-   scales: { y: { beginAtZero: true } },  // Start y-axis at 0
+   scales: {
+      y: {
+        beginAtZero: true,
+        suggestedMax: maxValue * 1.2, // Ensure that there is space above the bar
+        ticks: { callback: (v) => `$${v}` },
+      },
+    },
  };
 
 

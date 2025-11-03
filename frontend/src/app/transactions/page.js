@@ -114,7 +114,7 @@ export default function TransactionsPage() {
 
   return (
     // matched log in page ui
-    <main className="min-h-screen bg-black flex items-start sm:items-center justify-center px-4 py-10">
+    <main className="min-h-screen bg-pink-50 flex items-start sm:items-center justify-center px-4 py-10">
       <div className="w-full max-w-5xl bg-white text-black rounded-3xl shadow-2xl p-6 md:p-8">
         <h1 className="text-3xl font-bold text-center text-[#28799B] mb-6">
           Transactions
