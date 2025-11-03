@@ -53,7 +53,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#edede9' }}> 
+    <div className="min-h-screen flex items-center justify-center bg-pink-50"> 
     <div className="w-full max-w-xl bg-white rounded-3xl p-6 shadow-md mx-auto mt-10">
       <div className="text-center mb-6">
         <h1 className="text-4xl font-bold text-[#28799B]">Welcome Back</h1>
