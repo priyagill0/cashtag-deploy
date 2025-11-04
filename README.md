@@ -21,10 +21,11 @@ The goal is to make money management clear and fair. With simple charts and goal
 4. The backend should now be running on: http://localhost:8080
 
 ### Frontend Setup:
-1. Open a new terminal window and navigate to the frontend folder: `cd frontend`
-2. Install dependencies: `npm install`
-3. Run the development server: `npm run dev`
-4. The frontend should now be running on: http://localhost:3000
+1. Access the env file in the email sent to TA. Rename file to `.env.local` and place it in the root of the frontend folder. Location of file should be: `frontend/.env.local`
+2. Open a new terminal window and navigate to the frontend folder: `cd frontend`
+3. Install dependencies: `npm install`
+4. Run the development server: `npm run dev`
+5. The frontend should now be running on: http://localhost:3000
 
 ### Database Setup (Supabase):
 - The project uses Supabase as its database.
