@@ -69,6 +69,4 @@ public class BudgetController {
         budgetRepository.save(newBudget);
     }
 
-    
-    
 }
