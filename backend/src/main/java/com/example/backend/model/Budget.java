@@ -26,19 +26,19 @@ public class Budget {
     private String month;
 
     // maximum amount allowed in this budget 
-    private double max_amount;
+    private double maxAmount;
 
     // amount spent so far in this budget 
-    private double current_amount; 
+    private double currentAmount; 
 
     // store userId directly
     private UUID userId; 
 
     public Budget() {}
 
-    public Budget(double max_amount, double current_amount, Category category, UUID userId, String month) {
-        this.max_amount = max_amount;
-        this.current_amount = current_amount;
+    public Budget(double maxAmount, double currentAmount, Category category, UUID userId, String month) {
+        this.maxAmount = maxAmount;
+        this.currentAmount = currentAmount;
         this.category = category;
         this.userId = userId;
         // set budget period to current month (YYYY-MM)
@@ -61,20 +61,20 @@ public class Budget {
         this.category = category;
     }
 
-    public void setMaxAmount(double max_amount) {
-        this.max_amount = max_amount;
+    public void setMaxAmount(double maxAmount) {
+        this.maxAmount = maxAmount;
     }
 
     public double getMaxAmount() {
-        return max_amount;
+        return maxAmount;
     }
 
-    public void setCurrentAmount(double current_amount) {
-        this.current_amount = current_amount;
+    public void setCurrentAmount(double currentAmount) {
+        this.currentAmount = currentAmount;
     }
 
     public double getCurrentAmount() {
-        return current_amount;
+        return currentAmount;
     }
 
     public String getMonth() {

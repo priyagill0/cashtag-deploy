@@ -112,7 +112,9 @@ public class ExpenseController {
         }
 
         Expense expense = existing.get();
-        double existingAmount = expense.getAmount();
+        double oldAmount = expense.getAmount();
+        Category oldCategory = expense.getCategory();
+        String month = String.format("%d-%02d", expense.getDate().getYear(), expense.getDate().getMonthValue());
 
          // Update fields
         expense.setDescription(updatedExpense.getDescription());
@@ -120,19 +122,32 @@ public class ExpenseController {
         expense.setCategory(updatedExpense.getCategory());
         expense.setDate(updatedExpense.getDate()); // optional: update date if needed
 
-        budgetRepository.findByUserIdAndMonthAndCategory(
-            expense.getUserId(),
-            String.format("%d-%02d", expense.getDate().getYear(), expense.getDate().getMonthValue()), //format month into YYYY-MM FORMAT
-            expense.getCategory())
-            .stream().findFirst().ifPresent(budget -> { // if a budget exists for the category, update amount spent.
-                // remove the old amount and add the new amount ("update" the budget spent amount)
-                budget.setCurrentAmount(budget.getCurrentAmount() - existingAmount + expense.getAmount() );
-                budgetRepository.save(budget);
-            });
-
+        if (oldCategory.equals(expense.getCategory())) {
+            // Same category → adjust the budget by the difference
+            budgetRepository.findByUserIdAndMonthAndCategory(expense.getUserId(), month, expense.getCategory())
+                .stream().findFirst().ifPresent(budget -> {
+                    budget.setCurrentAmount(budget.getCurrentAmount() + expense.getAmount() - oldAmount);
+                    budgetRepository.save(budget);
+                });
+        } else {
+            // Category changed → deduct from old budget, and add to new budget
+            budgetRepository.findByUserIdAndMonthAndCategory(expense.getUserId(), month, oldCategory)
+                .stream().findFirst().ifPresent(budget -> {
+                    budget.setCurrentAmount(budget.getCurrentAmount() - oldAmount);
+                    budgetRepository.save(budget);
+                });
+    
+            budgetRepository.findByUserIdAndMonthAndCategory(expense.getUserId(), month, expense.getCategory())
+                .stream().findFirst().ifPresent(budget -> {
+                    budget.setCurrentAmount(budget.getCurrentAmount() + expense.getAmount());
+                    budgetRepository.save(budget);
+                });
+        }
+    
         Expense saved = expenseRepository.save(expense);
         return ResponseEntity.ok(saved);
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteExpense(@PathVariable Long id) {
         Optional<Expense> existing = expenseRepository.findById(id);
@@ -140,12 +155,11 @@ public class ExpenseController {
             return ResponseEntity.notFound().build();
         }
         Expense expense = existing.get();
-
-        budgetRepository.findByUserIdAndMonthAndCategory(
-            expense.getUserId(),
-            String.format("%d-%02d", expense.getDate().getYear(), expense.getDate().getMonthValue()), //format month into YYYY-MM FORMAT
-            expense.getCategory())
-            // if a budget exists for the category, update it by deleting the expense amount.
+        // format month into YYYY-MM FORMAT
+        String month = String.format("%d-%02d", expense.getDate().getYear(), expense.getDate().getMonthValue());
+        
+        // if a budget exists for the category, update it by deleting the expense amount.
+        budgetRepository.findByUserIdAndMonthAndCategory(expense.getUserId(), month, expense.getCategory())
             .stream().findFirst().ifPresent(budget -> { 
                 budget.setCurrentAmount(budget.getCurrentAmount() - expense.getAmount());
                 budgetRepository.save(budget);
