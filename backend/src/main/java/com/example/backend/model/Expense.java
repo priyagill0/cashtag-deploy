@@ -27,6 +27,7 @@ public class Expense {
 
     private LocalDate date; // <-- Date of expense, format: YYYY-MM-DD
 
+    private boolean recurring;
 
     // this is for later, incase we want to link expenses to users object. for now, we'll just send userId from the frontend.
     // @ManyToOne  // Many expenses belong to one user
@@ -36,13 +37,13 @@ public class Expense {
     private UUID userId; // store userId directly
     
     public Expense() {}
-    public Expense(String description, double amount, Category category, LocalDate date, UUID userId) {
+    public Expense(String description, double amount, Category category, LocalDate date, UUID userId, boolean recurring) {
         this.description = description;
         this.amount = amount;
         this.category = category;
         this.date = date;
         this.userId = userId;
-        // add recurring expense
+        this.recurring = recurring; // for recurring expenses
     }
 
     public Long getId() { // expense id
@@ -87,5 +88,13 @@ public class Expense {
 
     public LocalDate getDate() {
         return date;
+    }
+
+    public void setRecurring(boolean recurring) {
+        this.recurring = recurring;
+    }
+
+    public boolean isRecurring() {
+        return recurring;
     }
 }
