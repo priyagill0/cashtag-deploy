@@ -1,9 +1,9 @@
 import ProgressBar from "@ramonak/react-progress-bar";
-import Tooltip from "@mui/material/Tooltip";
-export const BudgetBar = ({ category, spent, budget, onEdit, onDelete }) => {
+
+export const BudgetBar = ({ category, amountSpent, budgetAmount, onEdit, onDelete }) => {
   // show the budget bar at 100% at most, even if spent exceeds budget
-  const fillPercentage = Math.min((spent / budget) * 100, 100);
-  const numericPercentage = ((spent / budget) * 100).toFixed(2);
+  const fillPercentage = Math.min((amountSpent / budgetAmount) * 100, 100);
+  const numericPercentage = ((amountSpent / budgetAmount) * 100).toFixed(2);
 
   return (
     <div className="bg-white hover:bg-[#f4fbf2] rounded-2xl shadow-md p-6 max-w-lg mx-auto space-y-6">
@@ -16,14 +16,14 @@ export const BudgetBar = ({ category, spent, budget, onEdit, onDelete }) => {
           {category}
         </span>
         <span>
-          ${spent} / <span className=" text-sm text-pink-500 font-semibold">${budget}</span>
+          ${amountSpent} / <span className=" text-sm text-pink-500 font-semibold">${budgetAmount}</span>
         </span>
       </div>
 
       {/* Progress bar */}
       <ProgressBar
         completed={Number(fillPercentage.toFixed(2))}
-        bgColor={spent > budget ? "#ef4444" : "#9bc5dd"} // red if over budget limit
+        bgColor={amountSpent > budgetAmount ? "#ef4444" : "#9bc5dd"} // red if over budget limit
         baseBgColor="#e2e8f0"
         height="12px"
         isLabelVisible={false} // hide text inside bar

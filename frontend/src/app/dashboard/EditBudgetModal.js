@@ -4,21 +4,18 @@ import { useState, useEffect } from "react";
 
 export default function EditBudgetModal({ isOpen, onClose, budget, onBudgetUpdated }) {
 
+ const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
  //store the user’s input for the new budget.
  const [budgetAmount, setBudgetAmount] = useState("");
  const [category, setCategory] = useState("");
  const [categories, setCategories] = useState([]); // this holds all categories fetched from the backend
 
- const date = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
- const month = date.slice(0, 7); // extract "YYYY-MM"
- const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba"; // update later
-
  // get available categories when modal opens
  useEffect(() => {
    if (isOpen && budget) {
     // backend endpoint to get available budget categories
-     fetch(`http://localhost:8080/api/budget/user/${userId}/${month}/available-categories`) 
+     fetch(`${API}/api/budget/user/${budget.userId}/${budget.month}/available-categories`) 
        .then((res) => res.json()) 
        .then((data) => setCategories([budget.category, ...data]))
        .catch((err) => console.error("Error fetching categories", err)); 
@@ -42,13 +39,12 @@ export default function EditBudgetModal({ isOpen, onClose, budget, onBudgetUpdat
     ...budget, //copies all existing properties of budget (id, currentAmount, month, etc.).
     maxAmount: parseFloat(budgetAmount),
     category: category.toUpperCase(),
-    userId: userId
   };
   
    try {
     console.log("Budget being updated:", JSON.stringify(updatedBudget, null, 2));
 
-    const res = await fetch(`http://localhost:8080/api/budget/user/${userId}/${month}/${category}`, {
+    const res = await fetch(`${API}/api/budget/user/${updatedBudget.userId}/${updatedBudget.month}/${category}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedBudget),

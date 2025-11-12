@@ -8,7 +8,6 @@ import AddBudgetModal from "./AddBudgetModal";
 import EditBudgetModal from "./EditBudgetModal";
 import BarChartComponent from "./BarChartComponent";
 import { BudgetBar } from "./BudgetBar";
-import SummaryComponents from "./SummaryComponents";
 import TotalAndCategory from "./TotalAndCategory";
 import { getCurrentMonthRange, monthStringToRange, fmtCurrency } from "./MonthSelector";
 
@@ -77,16 +76,6 @@ const viewLabel = useMemo(() => {
 
 
  useEffect(() => {
-  const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
-  const month = "2025-11";
-
-  fetch(`http://localhost:8080/api/budget/user/${userId}/${month}`) // YYYY-MM
-    .then((response) => response.json())
-    .then((data) => setBudgets(data))
-    .catch((err) => console.error("Error fetching budgets:", err));
-}, [refresh, userId,]);
-
- useEffect(() => {
   if (!Array.isArray(expenses)) return;
   const inRange = (isoDate) => {
     const x = new Date(isoDate);
@@ -95,6 +84,16 @@ const viewLabel = useMemo(() => {
   setMonthExpenses(expenses.filter((e) => e && e.date && inRange(e.date)));
 }, [expenses, viewStart, viewEnd]);
 
+
+useEffect(() => {
+  const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
+  const month = selectedMonth || new Date().toISOString().slice(0,7); // YYYY-MM
+
+  fetch(`http://localhost:8080/api/budget/user/${userId}/${month}`)
+    .then((response) => response.json())
+    .then((data) => setBudgets(data))
+    .catch((err) => console.error("Error fetching budgets:", err));
+}, [refresh, userId, selectedMonth,]);
 
  const handleDeleteClick = async (expenseId) => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
@@ -176,7 +175,7 @@ const viewLabel = useMemo(() => {
      {/* <div className="flex justify-between gap-3 max-w-6xl mx-auto"> */}
      <div className="flex justify-between gap-6 w-full">
     {/* current month expenses table  */}
-<div className="bg-white rounded-2xl shadow-md p-6 max-w-4xl mx-auto mb-8">
+<div className="flex-[2] bg-white rounded-2xl shadow-md p-6 min-w-[300px]">
   <div className="flex items-center justify-between mb-4">
     <h2 className="text-xl font-semibold text-gray-800">
       Expenses in {viewLabel}
@@ -193,6 +192,7 @@ const viewLabel = useMemo(() => {
           <th className="pb-2">Amount</th>
           <th className="pb-2">Category</th>
           <th className="pb-2">Date</th>
+          <th className="pb-2">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -202,63 +202,28 @@ const viewLabel = useMemo(() => {
             <td className="py-2">{fmtCurrency(exp.amount)}</td>
             <td className="py-2">{exp.category}</td>
             <td className="py-2">{exp.date}</td>
+            
+            <td className="py-2">
+                <button
+                      onClick={() => handleEditClick(exp)}
+                      className="text-[#9BC5DD] hover:underline mr-3"
+                    >
+                      Edit
+                </button>
+                <button
+                      onClick={() => handleDeleteClick(exp.id)}
+                      className="text-[#cb8a90] hover:underline"
+                    >
+                      Delete
+                </button>
+            </td>
+
           </tr>
         ))}
       </tbody>
     </table>
   )}
 </div>
-
-
-     {/*temporary recent expenses section */}
-     <div className="flex-[2] bg-white rounded-2xl shadow-md p-6 min-w-[300px] ">
-       <h2 className="text-xl font-semibold text-gray-800 mb-4">
-         Recent Expenses
-       </h2>
-
-
-       {expenses.length === 0 ? (
-         <p className="text-gray-500">
-         </p>
-       ) : (
-         <table className="w-full border-collapse text-left">
-           <thead>
-             <tr className="border-b text-gray-800">
-               <th className="pb-2">Description</th>
-               <th className="pb-2">Amount</th>
-               <th className="pb-2">Category</th>
-               <th className="pb-2">Date</th>
-            <th className="pb-2 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map((exp) => (
-                <tr key={exp.id} className="border-b hover:bg-pink-50">
-                  <td className="py-2">{exp.description}</td>
-                  <td className="py-2">${exp.amount.toFixed(2)}</td>
-                  <td className="py-2">{exp.category}</td>
-                  <td className="py-2">{exp.date}</td>
-                  <td className="py-2 text-right">
-                    <button
-                      onClick={() => handleEditClick(exp)}
-                      className="text-[#9BC5DD] hover:underline mr-3"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(exp.id)}
-                      className="text-[#cb8a90] hover:underline"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
 
       <div className="flex-[1] space-y-4 min-w-[300px]">
       <h2 className="flex justify-center text-xl font-semibold text-gray-800 mb-4">
@@ -269,8 +234,8 @@ const viewLabel = useMemo(() => {
             <BudgetBar
               key={budget.category}          // unique key for React
               category={budget.category}     // category name
-              spent={budget.currentAmount}   // amount spent in this category
-              budget={budget.maxAmount}      // budget for this category
+              amountSpent={budget.currentAmount}   // amount spent in this category
+              budgetAmount={budget.maxAmount}      // budget for this category
               onEdit={(category) => {        // edit handler
                 const b = budgets.find(b => b.category === category);
                 setSelectedBudget(b);
@@ -311,6 +276,8 @@ const viewLabel = useMemo(() => {
        isOpen={isEBudgetModalOpen}
        onClose={() => setIsBudgetModalOpen(false)}
        onBudgetAdded={handleBudgetAdded}
+       selectedMonth={selectedMonth || new Date().toISOString().slice(0, 7)} 
+       userId={userId}
      />
  
       <EditBudgetModal

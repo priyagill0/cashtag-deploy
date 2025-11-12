@@ -38,7 +38,8 @@ export default function BarChartComponent({ userId, refreshKey }) {
 
 
        rows.forEach((expense) => {
-         const date = new Date(expense.date); // Convert "YYYY-MM-DD" string to Date
+         const date = new Date(`${expense.date}T00:00:00`);
+
          if (isNaN(date)) return;
 
 

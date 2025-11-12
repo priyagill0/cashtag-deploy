@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -28,8 +29,6 @@ import com.example.backend.model.Category;
 import com.example.backend.model.Expense;
 import com.example.backend.repository.BudgetRepository;
 import com.example.backend.repository.ExpenseRepository;
-import java.util.Optional; 
-import java.time.LocalDate;
 
 
 @CrossOrigin(origins = { "http://localhost:3000" })
