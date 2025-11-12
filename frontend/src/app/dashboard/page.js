@@ -4,7 +4,10 @@
 import { useState, useEffect } from "react";
 import AddExpenseModal from "./AddExpenseModal";
 import EditExpenseModal from "./EditExpenseModal";
+import AddBudgetModal from "./AddBudgetModal";
+import EditBudgetModal from "./EditBudgetModal";
 import BarChartComponent from "./BarChartComponent";
+import { BudgetBar } from "./BudgetBar";
 
 
 export default function Dashboard() {
@@ -13,7 +16,13 @@ export default function Dashboard() {
  const [refresh, setRefresh] = useState(false);
  const [userId, setUserId] = useState(null);
  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+ const [isEBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+
  const [selectedExpense, setSelectedExpense] = useState(null);
+
+ const [budgets, setBudgets] = useState(null); // store fetched data
+ const [selectedBudget, setSelectedBudget] = useState(null);
+ const [isEditBudgetModalOpen, setIsEditBudgetModalOpen] = useState(false);
 
  useEffect(() => {
     const id =
@@ -24,6 +33,7 @@ export default function Dashboard() {
 
  const handleExpenseAdded = () => setRefresh(!refresh);
  const handleExpenseUpdated = () => setRefresh(!refresh);
+  const handleBudgetAdded = () => setRefresh(!refresh);
 
 
  useEffect(() => {
@@ -34,6 +44,19 @@ export default function Dashboard() {
      .then((data) => setExpenses(data))
      .catch((err) => console.error("Error fetching expenses:", err));
  }, [refresh, userId]);
+
+
+ useEffect(() => {
+  const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
+  const month = "2025-11";
+
+  fetch(`http://localhost:8080/api/budget/user/${userId}/${month}`) // YYYY-MM
+    .then((response) => response.json())
+    .then((data) => setBudgets(data))
+    .catch((err) => console.error("Error fetching budgets:", err));
+}, [refresh, userId,]);
+
+
 
  const handleDeleteClick = async (expenseId) => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
@@ -64,21 +87,31 @@ export default function Dashboard() {
      {/* Header */}
      <div className="flex justify-between items-center mb-8">
        <h1 className="text-3xl font-bold text-gray-800">My Expenses</h1>
+       <div className="flex justify-end items-end gap-3 mb-8">
        <button
          onClick={() => setIsModalOpen(true)}
          className="bg-pink-500 hover:bg-pink-600 text-white font-medium px-5 py-2 rounded-lg shadow-md"
        >
          + Add Expense
+       </button>      
+       <button
+         onClick={() => setIsBudgetModalOpen(true)}
+         className="bg-[#bcecac] hover:bg-[#a5d79c] font-medium px-5 py-2 rounded-lg shadow-md"
+       >
+         + Add Budget
        </button>
+       </div>
      </div>
 
 
      {/* bar chart */}
      {userId && <BarChartComponent userId={userId} refreshKey={refresh} />}
 
+     {/* <div className="flex justify-between gap-3 max-w-6xl mx-auto"> */}
+     <div className="flex justify-between gap-6 w-full">
 
      {/*temporary recent expenses section */}
-     <div className="bg-white rounded-2xl shadow-md p-6 max-w-4xl mx-auto">
+     <div className="flex-[2] bg-white rounded-2xl shadow-md p-6 min-w-[300px] ">
        <h2 className="text-xl font-semibold text-gray-800 mb-4">
          Recent Expenses
        </h2>
@@ -126,6 +159,40 @@ export default function Dashboard() {
         )}
       </div>
 
+
+      <div className="flex-[1] space-y-4 min-w-[300px]">
+      <h2 className="flex justify-center text-xl font-semibold text-gray-800 mb-4">
+         Budgets For The Month
+       </h2>
+       {budgets && budgets.length > 0 ? (   // if budgets exist, map through and show BudgetBar components
+          budgets.map((budget) => (
+            <BudgetBar
+              key={budget.category}          // unique key for React
+              category={budget.category}     // category name
+              spent={budget.currentAmount}   // amount spent in this category
+              budget={budget.maxAmount}      // budget for this category
+              onEdit={(category) => {        // edit handler
+                const b = budgets.find(b => b.category === category);
+                setSelectedBudget(b);
+                setIsEditBudgetModalOpen(true);
+              }}
+              onDelete={async (category) => {  // delete handler
+                if (!confirm("Are you sure you want to delete this budget?")) return;
+                await fetch(
+                  `http://localhost:8080/api/budget/user/${userId}/${budget.month}/${category}`,
+                  { method: "DELETE" }
+                );
+                setRefresh(prev => !prev);
+              }}
+            />
+          ))
+        ) : (
+          <p className="text-center text-gray-500">No budgets set yet for this month.</p>
+        )}
+
+        </div>
+        </div>
+
      {/* Modal (pop up) */}
      <AddExpenseModal
        isOpen={isModalOpen}
@@ -139,6 +206,20 @@ export default function Dashboard() {
         expense={selectedExpense}
         onExpenseUpdated={handleExpenseUpdated}
       />
+
+    <AddBudgetModal
+       isOpen={isEBudgetModalOpen}
+       onClose={() => setIsBudgetModalOpen(false)}
+       onBudgetAdded={handleBudgetAdded}
+     />
+ 
+      <EditBudgetModal
+        isOpen={isEditBudgetModalOpen}
+        onClose={() => setIsEditBudgetModalOpen(false)}
+        budget={selectedBudget}
+        onBudgetUpdated={handleBudgetAdded} 
+      />
+
     </main>
  );
 }
