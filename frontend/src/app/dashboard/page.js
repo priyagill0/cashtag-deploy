@@ -1,10 +1,29 @@
 "use client";
 
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import AddExpenseModal from "./AddExpenseModal";
 import EditExpenseModal from "./EditExpenseModal";
 import BarChartComponent from "./BarChartComponent";
+import SummaryComponents from "./SummaryComponents";
+
+
+const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080"; 
+
+
+// current month helper
+function getCurrentMonthRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const toISO = (d) => d.toISOString().slice(0, 10);
+  return { start: toISO(start), end: toISO(end) };
+}
+
+// format money helper
+function fmtCurrency(n) {
+  return `$${Number(n || 0).toFixed(2)}`;
+}
 
 
 export default function Dashboard() {
@@ -14,6 +33,19 @@ export default function Dashboard() {
  const [userId, setUserId] = useState(null);
  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
  const [selectedExpense, setSelectedExpense] = useState(null);
+
+ // month range (current month)
+const [{ start, end }] = useState(getCurrentMonthRange());
+
+//  current month list + summary
+const [monthExpenses, setMonthExpenses] = useState([]);
+
+// label: "November 2025"
+const monthLabel = useMemo(() => {
+  const d = new Date(start + "T00:00:00");
+  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}, [start]);
+
 
  useEffect(() => {
     const id =
@@ -34,6 +66,16 @@ export default function Dashboard() {
      .then((data) => setExpenses(data))
      .catch((err) => console.error("Error fetching expenses:", err));
  }, [refresh, userId]);
+
+ useEffect(() => {
+  if (!Array.isArray(expenses)) return;
+  const inRange = (isoDate) => {
+    const x = new Date(isoDate);
+    return x >= new Date(start) && x <= new Date(end);
+  };
+  setMonthExpenses(expenses.filter((e) => e && e.date && inRange(e.date)));
+}, [expenses, start, end]);
+
 
  const handleDeleteClick = async (expenseId) => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
@@ -72,9 +114,50 @@ export default function Dashboard() {
        </button>
      </div>
 
+     {/* Showing which month is default */}
+<p className="text-gray-600 mb-4">
+  Showing <span className="font-medium">{monthLabel}</span> by default
+</p>
+
+  <SummaryComponents expenses={expenses} start={start} end={end} monthLabel={monthLabel} />
+
 
      {/* bar chart */}
      {userId && <BarChartComponent userId={userId} refreshKey={refresh} />}
+
+    {/* current month expenses table  */}
+<div className="bg-white rounded-2xl shadow-md p-6 max-w-4xl mx-auto mb-8">
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-xl font-semibold text-gray-800">
+      Expenses in {monthLabel}
+    </h2>
+  </div>
+
+  {monthExpenses.length === 0 ? (
+    <p className="text-gray-500">No expenses found for {monthLabel}.</p>
+  ) : (
+    <table className="w-full border-collapse text-left">
+      <thead>
+        <tr className="border-b text-gray-800">
+          <th className="pb-2">Description</th>
+          <th className="pb-2">Amount</th>
+          <th className="pb-2">Category</th>
+          <th className="pb-2">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {monthExpenses.map((exp) => (
+          <tr key={exp.id} className="border-b hover:bg-pink-50">
+            <td className="py-2">{exp.description}</td>
+            <td className="py-2">{fmtCurrency(exp.amount)}</td>
+            <td className="py-2">{exp.category}</td>
+            <td className="py-2">{exp.date}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
 
 
      {/*temporary recent expenses section */}
