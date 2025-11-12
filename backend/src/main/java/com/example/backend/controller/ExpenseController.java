@@ -28,6 +28,9 @@ import com.example.backend.model.Category;
 import com.example.backend.model.Expense;
 import com.example.backend.repository.BudgetRepository;
 import com.example.backend.repository.ExpenseRepository;
+import java.util.Optional; 
+import java.time.LocalDate;
+
 
 @CrossOrigin(origins = { "http://localhost:3000" })
 @RestController
@@ -87,6 +90,7 @@ public class ExpenseController {
         if (userId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId missing in request");
         }
+      
         if(expense.getCategory() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "category missing in request");
         }
@@ -99,8 +103,31 @@ public class ExpenseController {
                 budget.setCurrentAmount(budget.getCurrentAmount() + expense.getAmount());
                 budgetRepository.save(budget);
             });
+      
+        Expense savedExpense = expenseRepository.save(expense);
 
-        return expenseRepository.save(expense);
+        // if expense is recurring 
+        if (expense.isRecurring()){
+            LocalDate date = savedExpense.getDate();
+
+            // loop through each month until dec of that year
+            for (int month = date.getMonthValue() + 1; month <= 12; month++){
+                LocalDate nextDate = LocalDate.of(date.getYear(), month, date.getDayOfMonth());
+
+                // create a copy of the expense
+                Expense expenseCopy = new Expense(
+                    savedExpense.getDescription(),
+                    savedExpense.getAmount(),
+                    savedExpense.getCategory(),
+                    nextDate,
+                    savedExpense.getUserId(),
+                    true);
+
+                expenseRepository.save(expenseCopy); // add the expense to repository for each month
+            }
+        }
+        return savedExpense;
+
     }
 
     //this is for editing an expense

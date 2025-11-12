@@ -3,12 +3,12 @@ package com.example.backend.model;
 // this enum represents categories for expenses
 public enum Category {
     DINING,
-    GROCERIES,
+    EDUCATION,
     ENTERTAINMENT,
+    GROCERIES,
+    HEALTH,
+    MISCELLANEOUS,
     SHOPPING,
     TRANSPORTATION,
-    EDUCATION,
-    TRAVEL,
-    HEALTH,
-    MISCELLANEOUS
+    TRAVEL
 }
