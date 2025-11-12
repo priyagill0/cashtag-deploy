@@ -50,3 +50,7 @@
 -  We will include budgeting and group-related functionalities in sprint 2
 
 
+## Link to Video
+
+https://youtu.be/FGvWRi3tYMQ
+
