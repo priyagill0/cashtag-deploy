@@ -10,6 +10,7 @@ import BarChartComponent from "./BarChartComponent";
 import { BudgetBar } from "./BudgetBar";
 import TotalAndCategory from "./TotalAndCategory";
 import { getCurrentMonthRange, monthStringToRange, fmtCurrency } from "./MonthSelector";
+import PieChartComponent from "./PieChartComponent";
 
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080"; 
@@ -169,8 +170,9 @@ useEffect(() => {
    {/* Total Spending + category */}
   <TotalAndCategory expenses={expenses} start={viewStart} end={viewEnd} monthLabel={viewLabel} />
 
-     {/* bar chart */}
-     {userId && <BarChartComponent userId={userId} refreshKey={refresh} />}
+  {/* Pie Chart */}
+  <PieChartComponent expenses={monthExpenses} monthLabel={viewLabel} />
+
 
      {/* <div className="flex justify-between gap-3 max-w-6xl mx-auto"> */}
      <div className="flex justify-between gap-6 w-full">
@@ -257,6 +259,9 @@ useEffect(() => {
 
         </div>
         </div>
+
+     {/* Bar Chart */}
+     {userId && <BarChartComponent userId={userId} refreshKey={refresh} />}
 
      {/* Modal (pop up) */}
      <AddExpenseModal

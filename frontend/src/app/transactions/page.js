@@ -21,7 +21,15 @@ export default function TransactionsPage() {
   const [categories, setCategories] = useState([]);
   const [sizeChoice, setSizeChoice] = useState("5"); // 5 or 10 or 20 or All expenses on one page
 
-  
+  // Load the clicked category when user clicks on the pie chart legend
+  useEffect(() => {
+    const saved = localStorage.getItem("txCategoryFilter");
+    if (saved) {
+      setCategory(saved);
+      localStorage.removeItem("txCategoryFilter");
+    }
+  }, []);
+
   // Load categories from backend enum
   useEffect(() => {
     (async () => {
