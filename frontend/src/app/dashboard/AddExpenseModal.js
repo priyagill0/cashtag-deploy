@@ -10,6 +10,7 @@ export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
  const [amount, setAmount] = useState("");
  const [category, setCategory] = useState("");
  const [categories, setCategories] = useState([]); // this holds all categories fetched from the backend
+ const [isRecurring, setIsRecurring] = useState(false); //for the recurring expense button
 
 
  //when popup opens, fetch list of tags
@@ -34,6 +35,7 @@ export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
      category: category.toUpperCase(),
      date: new Date().toISOString().split("T")[0],
      userId: "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba",
+     recurring: isRecurring,
    };
 
 
@@ -51,6 +53,7 @@ export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
        setCategory("");
        onExpenseAdded();
        onClose();
+       setIsRecurring(false);
      } else {
        const errorText = await res.text();
        console.error("Server returned:", errorText);
@@ -108,6 +111,17 @@ export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
 
 
          </select>
+
+         {/* Recurring checkbox */}
+        <label className="flex items-center gap-2 mt-2">
+          <input
+            type="checkbox"
+            checked={isRecurring}
+            onChange={(e) => setIsRecurring(e.target.checked)}
+          />
+          <span>Recurring expense</span>
+        </label>
+
 
 
          {/*cancel and save buttons */}
