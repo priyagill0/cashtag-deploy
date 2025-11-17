@@ -9,7 +9,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Table(name = "group_members")
 public class GroupMember {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    //@Column(columnDefinition = "UUID")
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @ManyToOne

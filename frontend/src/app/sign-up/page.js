@@ -19,7 +19,7 @@ export default function SignUp() {
         password,
         options: {
         data: {
-          firstname: firstname,  // Store in user metadata
+          firstname: firstname,  
           lastname: lastname
         }
       }

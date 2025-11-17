@@ -21,6 +21,7 @@ public class GroupController {
     //this creates a new group and automatically adds the creator as a member.
     @PostMapping("/create")
 
+    
     public ResponseEntity<Group> createGroup(@RequestBody Map<String, String> req) {
         System.out.println("Incoming request body: " + req);
         
@@ -29,7 +30,8 @@ public class GroupController {
         UUID ownerId = UUID.fromString(req.get("ownerId"));
 
         // Find the owner in the database
-        User owner = userRepo.findById(ownerId).orElse(null);
+        //backend is null?
+        User owner = userRepo.findById(ownerId).orElseThrow(() -> new RuntimeException("Owner not found: " + ownerId));
     
         // if (owner == null) {
         //     System.out.println("Owner not found for ID");
@@ -49,7 +51,43 @@ public class GroupController {
         memberRepo.save(m);  
         return ResponseEntity.ok(saved); //return the saved group
     }
-    
+
+   @PostMapping("/users/sync")
+    public ResponseEntity<User> syncUser(@RequestBody Map<String,String> req) {
+        try {
+            UUID supabaseId = UUID.fromString(req.get("id"));
+            String email = req.get("email");
+            String firstName = req.get("firstName");
+            String lastName = req.get("lastName");
+
+            // Check if user already exists
+            Optional<User> existingUser = userRepo.findById(supabaseId);
+            
+            User user;
+            if (existingUser.isPresent()) {
+                // User exists - update it
+                user = existingUser.get();
+                user.setEmail(email);
+                user.setFirstname(firstName);
+                user.setLastname(lastName);
+            } else {
+                // New user - create it
+                user = new User();
+                user.setId(supabaseId);
+                user.setEmail(email);
+                user.setFirstname(firstName);
+                user.setLastname(lastName);
+            }
+            
+            userRepo.save(user);
+            return ResponseEntity.ok(user);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
     //adds another user (member) to the group
     @PostMapping("/invite")
     public ResponseEntity<String> inviteUser(@RequestBody Map<String, String> req) {
@@ -58,6 +96,13 @@ public class GroupController {
         User user = userRepo.findByEmail(email).orElseThrow();
         Group group = groupRepo.findById(groupId).orElseThrow();
 
+         // Check if user is already a member
+        boolean knownMember = memberRepo.findByGroupId(groupId).stream()
+            .anyMatch(m -> m.getUser().getId().equals(user.getId()));
+        
+        if (knownMember) {
+            return ResponseEntity.badRequest().body("User is already a member");
+        }
         GroupMember member = new GroupMember();
         member.setGroup(group);
         member.setUser(user);
@@ -69,10 +114,55 @@ public class GroupController {
     //this returns all the groups that user belongs to
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Group>> getUserGroups(@PathVariable UUID userId) {
-        List<GroupMember> memberships = memberRepo.findByUserId(userId);
-        List<Group> groups = memberships.stream()
+        // groups where the user is the owner
+        List<Group> ownedGroups = groupRepo.findByOwnerId(userId);
+
+        // groups where the user is a member
+        List<Group> memberGroups = memberRepo.findByUserId(userId)
+                .stream()
                 .map(GroupMember::getGroup)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(groups);
+
+        // Combine both lists and remove duplicates (just in case)
+        Set<Group> allGroups = new HashSet<>();
+        allGroups.addAll(ownedGroups);
+        allGroups.addAll(memberGroups);
+        
+
+    return ResponseEntity.ok(new ArrayList<>(allGroups));
+        // List<Group> groups = groupRepo.findByOwnerId(userId);
+        // return ResponseEntity.ok(groups);
+        // List<GroupMember> memberships = memberRepo.findByUserId(userId);
+        // List<Group> groups = memberships.stream()
+        //         .map(GroupMember::getGroup)
+        //         .collect(Collectors.toList());
+        // return ResponseEntity.ok(groups);
     }
+
+    //this returns all members in that group
+    @GetMapping("/{groupId}/members")
+    public ResponseEntity<List<Map<String, Object>>> getGroupMembers(@PathVariable UUID groupId) {
+    List<GroupMember> members = memberRepo.findByGroupId(groupId);
+    List<Map<String, Object>> response = members.stream().map(member -> {
+        Map<String, Object> memberData = new HashMap<>();
+        memberData.put("id", member.getId());
+
+        User user = member.getUser();
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("id", user.getId());
+        userData.put("name", user.getFirstname());
+        userData.put("username", user.getLastname());
+        userData.put("email", user.getEmail());
+
+        memberData.put("user", userData);
+        return memberData;
+    }).collect(Collectors.toList());
+
+    return ResponseEntity.ok(response);
+        // List<GroupMember> members = memberRepo.findByGroupId(groupId);
+        // return ResponseEntity.ok(members);
+    }
+
+
 }
+
