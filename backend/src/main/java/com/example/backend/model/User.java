@@ -18,6 +18,7 @@ public class User {
     // @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(columnDefinition = "UUID,  updatable = false, nullable = false")
+    //@GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     // private String username;
@@ -25,7 +26,7 @@ public class User {
     private String lastname;
     private String email;
 
-     @Column(name = "created_at", updatable = false, insertable = false)
+     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt; 
 
     // Constructors
@@ -47,10 +48,11 @@ public class User {
     public String getEmail() { return email; }
 
 
-   // public void setId(UUID id) { this.id = id; }
+   public void setId(UUID id) { this.id = id; }
     // public void setUsername(String username) { this.username = username; }
     public void setFirstname(String firstname) { this.firstname = firstname; }
     public void setLastname(String lastname) { this.lastname = lastname; }
     public void setEmail(String email) { this.email = email; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
