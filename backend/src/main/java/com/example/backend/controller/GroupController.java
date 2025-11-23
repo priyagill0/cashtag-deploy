@@ -7,6 +7,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import com.example.backend.service.BadgeService;
+import com.example.backend.service.StreakService;
+import com.example.backend.service.BadgeBackfillService;
+
+
 
 @RestController
 @RequestMapping("/api/groups")
@@ -17,11 +24,12 @@ public class GroupController {
     @Autowired private GroupRepository groupRepo;
     @Autowired private GroupMemberRepository memberRepo;
     @Autowired private UserRepository userRepo;
+    @Autowired private BadgeService badgeService;
+    @Autowired private StreakService streakService;
+    @Autowired private BadgeBackfillService badgeBackfillService;
     
     //this creates a new group and automatically adds the creator as a member.
     @PostMapping("/create")
-
-    
     public ResponseEntity<Group> createGroup(@RequestBody Map<String, String> req) {
         System.out.println("Incoming request body: " + req);
         
@@ -49,6 +57,13 @@ public class GroupController {
         m.setUser(owner);
         // m.setRole("OWNER");
         memberRepo.save(m);  
+
+        // Award JOIN_GROUP badge to the owner of the group
+        badgeService.checkAndAwardBadge(
+            owner.getId(),
+            BadgeEventType.JOIN_GROUP,
+            1
+        );
         return ResponseEntity.ok(saved); //return the saved group
     }
 
@@ -58,8 +73,8 @@ public class GroupController {
             UUID supabaseId = UUID.fromString(req.get("id"));
             String email = req.get("email");
             String firstName = req.get("firstName");
-            String lastName = req.get("lastName");
-
+            String lastName = req.get("lastName"); 
+            
             // Check if user already exists
             Optional<User> existingUser = userRepo.findById(supabaseId);
             
@@ -78,8 +93,19 @@ public class GroupController {
                 user.setFirstname(firstName);
                 user.setLastname(lastName);
             }
-            
+
+            String lastLoginStr = req.get("last_sign_in_at");
+
+            OffsetDateTime odt = OffsetDateTime.parse(lastLoginStr);
+            LocalDate lastLogin = odt.toLocalDate();
+
+            streakService.handleLogin(supabaseId, lastLogin);
+
+
             userRepo.save(user);
+
+            badgeBackfillService.checkAllBadgesForUser(supabaseId);
+            System.out.println("ran backfill : " + user.getId());
             return ResponseEntity.ok(user);
             
         } catch (Exception e) {
@@ -93,6 +119,7 @@ public class GroupController {
     public ResponseEntity<String> inviteUser(@RequestBody Map<String, String> req) {
         String email = req.get("email");
         UUID groupId = UUID.fromString(req.get("groupId"));
+        // UUID inviterId = UUID.fromString(req.get("inviterId")); // need inviterId from frontend
         User user = userRepo.findByEmail(email).orElseThrow();
         Group group = groupRepo.findById(groupId).orElseThrow();
 
@@ -108,6 +135,13 @@ public class GroupController {
         member.setUser(user);
         memberRepo.save(member);
 
+        // Award the JOIN_GROUP badge to the user who joined
+        badgeService.checkAndAwardBadge(
+            user.getId(),
+            BadgeEventType.JOIN_GROUP,
+            1
+        );
+        
         return ResponseEntity.ok("User invited successfully");
     }
 
@@ -127,16 +161,13 @@ public class GroupController {
         Set<Group> allGroups = new HashSet<>();
         allGroups.addAll(ownedGroups);
         allGroups.addAll(memberGroups);
-        
 
-    return ResponseEntity.ok(new ArrayList<>(allGroups));
-        // List<Group> groups = groupRepo.findByOwnerId(userId);
-        // return ResponseEntity.ok(groups);
-        // List<GroupMember> memberships = memberRepo.findByUserId(userId);
-        // List<Group> groups = memberships.stream()
-        //         .map(GroupMember::getGroup)
-        //         .collect(Collectors.toList());
-        // return ResponseEntity.ok(groups);
+        // Award JOIN_GROUP badge if the user belongs to ANY group.
+        if (!allGroups.isEmpty()) {
+            badgeService.checkAndAwardBadge(userId, BadgeEventType.JOIN_GROUP, 1);
+        }
+ 
+        return ResponseEntity.ok(new ArrayList<>(allGroups)); 
     }
 
     //this returns all members in that group

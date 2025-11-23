@@ -11,26 +11,28 @@ import {
  Legend,
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-
+import { useAuth } from "../../hooks/useAuth"; // import your auth hook 
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartDataLabels);
 
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-const TEST_USER_ID = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
+// const TEST_USER_ID = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
 
 
-export default function BarChartComponent({ userId, refreshKey }) {
+
+export default function BarChartComponent({ refreshKey }) {
  const [chartData, setChartData] = useState({ labels: [], datasets: [] });
+ const { user, loading } = useAuth("/login");
+ //  const [userId, setUserId] = useState(null);
+//  const userId = user?.id;
 
 
  useEffect(() => {
-   // Try to get user ID from login or use test one
-   const id = userId || localStorage.getItem("userId") || TEST_USER_ID;
-
+  if (!user?.id) return; 
 
     // Fetch all expenses from backend for this user
-   fetch(`${API}/api/expense/user/${userId}?all=true`)
+   fetch(`${API}/api/expense/user/${user?.id}?all=true`)
      .then((res) => res.json())
      .then((rows) => {
        // Total expenses per month
@@ -72,7 +74,7 @@ export default function BarChartComponent({ userId, refreshKey }) {
        });
      })
      .catch(() => setChartData({ labels: [], datasets: [] }));
- }, [userId, refreshKey]);
+ }, [user?.id, refreshKey]);
 
  // Dynamic y-axis 
  const maxValue =

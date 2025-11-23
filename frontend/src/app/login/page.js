@@ -47,7 +47,8 @@ export default function Login() {
             id: user.id,
             email: user.email,
             firstName: user.user_metadata?.first_name || user.email.split('@')[0] || "User",
-            lastName: user.user_metadata?.last_name || ""
+            lastName: user.user_metadata?.last_name || "",
+            last_sign_in_at: user.last_sign_in_at   // Include last sign-in time
           })
         });
 

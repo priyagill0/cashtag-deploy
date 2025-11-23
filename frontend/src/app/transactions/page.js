@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-const USER_ID = process.env.NEXT_PUBLIC_USER_ID || "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
 
 export default function TransactionsPage() {
   const [rows, setRows] = useState([]);
@@ -20,6 +20,18 @@ export default function TransactionsPage() {
   const [err, setErr] = useState("");
   const [categories, setCategories] = useState([]);
   const [sizeChoice, setSizeChoice] = useState("5"); // 5 or 10 or 20 or All expenses on one page
+  const { user, loading: authLoading } = useAuth("/login"); // get logged-in user
+  //const USER_ID = user?.id || "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba"; //fallback
+
+  // Wait for auth to load before doing ANY fetch
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user?.id) return;       // user not logged in yet
+
+    // initial fetch
+    fetchPage(0, pageInfo.size);
+  }, [user]);
+
 
   // Load the clicked category when user clicks on the pie chart legend
   useEffect(() => {
@@ -61,7 +73,9 @@ export default function TransactionsPage() {
       if (q) params.set("q", q);
       if (category) params.set("category", category);
 
-      const url = `${API}/api/expense/user/${USER_ID}?${params.toString()}`;
+      if (!user?.id) return;  //This prevents undefined userId
+
+      const url = `${API}/api/expense/user/${user?.id}?${params.toString()}`;
       const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) {
         const txt = await res.text();
@@ -106,11 +120,13 @@ export default function TransactionsPage() {
 
   // Re-fetch to filters/sort/page size choice changes
   useEffect(() => {
+    if (authLoading) return;
+    if (!user?.id) return;
     // reset to first page whenever criteria changes
     const newSize = sizeChoice === "ALL" ? pageInfo.size : Number(sizeChoice);
     setPageInfo((p) => ({ ...p, number: 0, size: newSize }));
     fetchPage(0, newSize);
-  }, [q, category, sort, sizeChoice]);
+  }, [q, category, sort, sizeChoice, authLoading, user]);
 
   const fmt = (n) => {
     const x = Number(n);

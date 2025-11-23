@@ -11,7 +11,7 @@ import { BudgetBar } from "./BudgetBar";
 import TotalAndCategory from "./TotalAndCategory";
 import { getCurrentMonthRange, monthStringToRange, fmtCurrency } from "./MonthSelector";
 import PieChartComponent from "./PieChartComponent";
-
+import { useAuth } from "../../hooks/useAuth"; // import your auth hook 
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080"; 
 
@@ -20,7 +20,12 @@ export default function Dashboard() {
  const [isModalOpen, setIsModalOpen] = useState(false);
  const [expenses, setExpenses] = useState([]);
  const [refresh, setRefresh] = useState(false);
- const [userId, setUserId] = useState(null);
+
+ const { user, loading } = useAuth("/login");
+//  const [userId, setUserId] = useState(null);
+ const userId = user?.id;
+
+
  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
  const [isEBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
 
@@ -55,25 +60,23 @@ const viewLabel = useMemo(() => {
 
 
  useEffect(() => {
-    const id =
-      (typeof window !== "undefined" && localStorage.getItem("userId")) ||
-      "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba"; // fallback user
-    setUserId(id); // store it in state
+  if (!user?.id) return;  
+    setUserId(user?.id); 
   }, []);
 
  const handleExpenseAdded = () => setRefresh(!refresh);
  const handleExpenseUpdated = () => setRefresh(!refresh);
-  const handleBudgetAdded = () => setRefresh(!refresh);
+ const handleBudgetAdded = () => setRefresh(!refresh);
 
 
  useEffect(() => {
-   const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
-   if (!userId) return;
-   fetch(`http://localhost:8080/api/expense/user/${userId}?all=true`)
+  //  const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
+  if (!user?.id) return; 
+  fetch(`http://localhost:8080/api/expense/user/${user?.id}?all=true`)
      .then((res) => res.json())
      .then((data) => setExpenses(data))
      .catch((err) => console.error("Error fetching expenses:", err));
- }, [refresh, userId]);
+ }, [refresh, user]);
 
 
  useEffect(() => {
@@ -87,14 +90,14 @@ const viewLabel = useMemo(() => {
 
 
 useEffect(() => {
-  const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
+  // const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
   const month = selectedMonth || new Date().toISOString().slice(0,7); // YYYY-MM
-
-  fetch(`http://localhost:8080/api/budget/user/${userId}/${month}`)
+  if (!user?.id) return; 
+  fetch(`http://localhost:8080/api/budget/user/${user?.id}/${month}`)
     .then((response) => response.json())
     .then((data) => setBudgets(data))
     .catch((err) => console.error("Error fetching budgets:", err));
-}, [refresh, userId, selectedMonth,]);
+}, [refresh, user, selectedMonth,]);
 
  const handleDeleteClick = async (expenseId) => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
@@ -245,8 +248,9 @@ useEffect(() => {
               }}
               onDelete={async (category) => {  // delete handler
                 if (!confirm("Are you sure you want to delete this budget?")) return;
+                if (!user?.id) return; 
                 await fetch(
-                  `http://localhost:8080/api/budget/user/${userId}/${budget.month}/${category}`,
+                  `http://localhost:8080/api/budget/user/${user?.id}/${budget.month}/${category}`,
                   { method: "DELETE" }
                 );
                 setRefresh(prev => !prev);

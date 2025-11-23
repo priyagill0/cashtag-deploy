@@ -343,7 +343,7 @@ export default function GroupDetailsPage() {
                   return (
                     <tr key={expense.id} className="hover:bg-gray-50">
                       <td className="px-4 py-2 border text-gray-700">
-                        {new Date(expense.date).toLocaleDateString()}
+                        {new Date(`${expense.date}T00:00:00`).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-2 border text-gray-700 font-medium">
                         {expense.description}
@@ -584,7 +584,7 @@ function AddGroupExpenseModal({
   
   const [description, setDescription] = useState("");
   const [total, setTotal] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toLocaleDateString("en-CA"));
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState([]);
   const [shares, setShares] = useState([]);
@@ -610,7 +610,7 @@ function AddGroupExpenseModal({
       // Reset form for add mode
       setDescription("");
       setTotal("");
-      setDate(new Date().toISOString().split('T')[0]);
+      setDate(new Date().toLocaleDateString("en-CA"));
       setCategory("");
       setSplitType("equal");
       setShares([]);
