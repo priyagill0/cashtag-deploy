@@ -43,6 +43,9 @@ const [{ start, end }] = useState(getCurrentMonthRange());
 //  current month list + summary
 const [monthExpenses, setMonthExpenses] = useState([]);
 
+// budget alerts
+const [showBudgetAlert, setShowBudgetAlert] = useState(false);
+
 //  which range to show as selected month or current month
 const { viewStart, viewEnd } = useMemo(() => {
   if (selectedMonth) {
@@ -99,6 +102,42 @@ useEffect(() => {
     .catch((err) => console.error("Error fetching budgets:", err));
 }, [refresh, user, selectedMonth,]);
 
+// list of alerts for budgets that are nearing the limit: 80 to 90 percent used
+  const nearLimitAlerts = [];
+  if (Array.isArray(budgets)) {
+    for (const b of budgets) {
+      if (!b || !b.maxAmount || b.maxAmount <= 0) continue;
+
+      // find percentage used
+      const percentage = (b.currentAmount / b.maxAmount) * 100;
+
+      // only if 80-90% used
+      if (percentage >= 80 && percentage <= 90) {
+        const remaining = Math.max(b.maxAmount - b.currentAmount, 0);
+        nearLimitAlerts.push({
+          category: b.category,
+          percentage,
+          remaining,
+        });
+      }
+    }
+  }
+
+  // show popup alert for those budgets budgets that lasts 10 seconds or can be closed earlier
+  useEffect(() => {
+    if (nearLimitAlerts.length > 0) {
+      setShowBudgetAlert(true);
+
+      const timer = setTimeout(() => {
+        setShowBudgetAlert(false);
+      }, 10000); // popup auto hides after 10 seconds
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowBudgetAlert(false);
+    }
+  }, [nearLimitAlerts.length]);
+
  const handleDeleteClick = async (expenseId) => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
 
@@ -125,6 +164,55 @@ useEffect(() => {
 
  return (
    <main className="min-h-screen bg-pink-50 p-10">
+
+    {/* Budget Alert Notifcation */}
+    {showBudgetAlert && nearLimitAlerts.length > 0 && (
+  <div className="fixed top-4 right-4 z-50 max-w-md animate-fade-in">
+    <div className="rounded-2xl shadow-2xl border border-red-300 bg-white backdrop-blur-md p-5 space-y-4">
+      
+      {/* Title */}
+      <div className="flex justify-between items-center">
+        <div className="text-lg font-extrabold text-red-700 tracking-wide">
+          ⚠ Budget Alert
+        </div>
+        <button
+          onClick={() => setShowBudgetAlert(false)}
+          className="text-sm font-semibold text-red-700 hover:text-red-900 hover:underline"
+        >
+          Close 
+        </button>
+      </div>
+
+      {/* Alerts */}
+      <div className="space-y-3 text-sm">
+        {nearLimitAlerts.map((alert) => (
+          <div
+            key={alert.category}
+            className="p-3 rounded-xl bg-red-200/70 border border-red-300 font-medium shadow-sm"
+          >
+            <div className="text-red-900 font-semibold">
+              {alert.category} Budget
+            </div>
+            <div className="text-red-800">
+              Currently at{" "}
+              <span className="font-bold">
+                {alert.percentage.toFixed(2)}%
+              </span>
+            </div>
+            <div className="text-red-800">
+              Only{" "}
+              <span className="font-bold">
+                ${alert.remaining.toFixed(2)}
+              </span>{" "}
+              left before exceeding your limit
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
      {/* Header */}
      <div className="flex justify-between items-center mb-8">
        <h1 className="text-3xl font-bold text-gray-800">My Expenses</h1>

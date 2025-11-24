@@ -4,11 +4,21 @@ export const BudgetBar = ({ category, amountSpent, budgetAmount, onEdit, onDelet
   // show the budget bar at 100% at most, even if spent exceeds budget
   const fillPercentage = Math.min((amountSpent / budgetAmount) * 100, 100);
   const numericPercentage = ((amountSpent / budgetAmount) * 100).toFixed(2);
+  const nearLimit = numericPercentage >= 80 && numericPercentage <= 90;
+  const remainingAmount = Math.max(budgetAmount - amountSpent, 0);
 
   return (
     <div className="bg-white hover:bg-[#f4fbf2] rounded-2xl shadow-md p-6 max-w-lg mx-auto space-y-6">
 
     <div className="flex flex-col gap-1">
+
+      {/* Budget Alert (80–90% of budget reached) */}
+        {nearLimit && (
+          <div className="mt-2 text-xs border-red-300 bg-red-100/90 rounded-lg px-3 py-2">
+            Alert: You're about to reach your budget limit. Only 
+            <span className="font-semibold"> ${remainingAmount.toFixed(2)}</span> left.
+          </div>
+        )}
 
       {/* category name and spent/budget */}
       <div className="flex justify-between text-sm text-gray-700">
