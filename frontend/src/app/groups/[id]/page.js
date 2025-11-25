@@ -47,8 +47,8 @@ export default function GroupDetailsPage() {
       });
       if (res.ok) {
         const data = await res.json();
-      console.log("🔍 Fetched expenses:", data);
-      console.log("📊 Number of expenses:", data.length);
+      console.log(" Fetched expenses:", data);
+      console.log(" Number of expenses:", data.length);
         setExpenses(data);
       }
     } catch (err) {
@@ -438,7 +438,7 @@ export default function GroupDetailsPage() {
                     <div>
                       <p className="font-medium">{expense.description}</p>
                       <p className="text-sm text-gray-500">
-                        {new Date(expense.date).toLocaleDateString()}
+                        {new Date(expense.date + "T00:00:00").toLocaleDateString("en-CA", { timeZone: "America/Toronto" })}
                         {expense.category && (
                           <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
                             {expense.category}

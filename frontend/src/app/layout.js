@@ -1,5 +1,6 @@
 import Link from "next/link";
 import "./globals.css";
+import SignOut from "./sign-out/page.js";
 
 export default function RootLayout({ children }) {
   return (
@@ -7,12 +8,15 @@ export default function RootLayout({ children }) {
       <body>
         <nav
           style={{ backgroundColor: "#9BC5DD" }}
-          className="p-4 flex gap-4 text-gray-800 font-medium"
+          className="p-4 flex justify-between items-center text-gray-800 font-medium"
         >
+           <div className="flex gap-4"> 
           <Link href="/login">Login</Link>
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/transactions">Transactions</Link>
           <Link href="/groups">Groups</Link> {/*added Groups link */}
+          </div>
+          <SignOut/>
         </nav>
         {children}
       </body>
