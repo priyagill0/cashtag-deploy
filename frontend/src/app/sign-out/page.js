@@ -7,6 +7,7 @@ export default function SignOut() {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null); 
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef(null);
   const router = useRouter();
@@ -20,12 +21,17 @@ export default function SignOut() {
     
     getUser();
 
-    // Listen for state changes so that the text can update "signing out... "
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
+    // Listen for login and  logout , profile updates
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        const newUser = session?.user ?? null;
+        setUser(newUser);
 
-    // when clicking at any place outside of the box, the user profile box should disappear 
+        // reset old cached data when account changes
+        setUserData(null);
+        setAvatarUrl(null);
+      }
+    );
     const outsideClick = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
@@ -49,6 +55,13 @@ export default function SignOut() {
           if (res.ok) {
             const data = await res.json();
             setUserData(data);
+            if (data.avatarUrl) {
+              setAvatarUrl(data.avatarUrl);
+            } else if (user.user_metadata?.avatar_url) {
+              setAvatarUrl(user.user_metadata.avatar_url);
+            } else {
+              setAvatarUrl(null);          
+            }
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -81,16 +94,27 @@ export default function SignOut() {
     }
   };
 
-  // Get first name from backend data or email
-  const getFirstName = () => {
-    return userData?.firstname || user?.email?.split('@')[0] || "User";
-  };
+  // Get display name
+const getDisplayName = () => {
+  if (userData?.firstname || userData?.lastname) {
+    return `${userData.firstname || ""} ${userData.lastname || ""}`.trim();
+  }
+  if (user?.email) {
+    return user.email.split("@")[0];
+  }
+  return "User";
+};
 
   // Get initials
-  const getInitials = () => {
-    const firstName = getFirstName();
-    return firstName.charAt(0).toUpperCase();
-  };
+ const getInitials = () => {
+  const name = getDisplayName();
+  return name
+    .trim()
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+};
 
   if (!user) return null;
 
@@ -109,7 +133,15 @@ export default function SignOut() {
         }}
         aria-label="User menu"
       >
-        {getInitials()}
+    {avatarUrl ? (
+    <img
+      src={avatarUrl}
+      alt="Profile"
+      className="w-full h-full rounded-full object-cover"
+    />
+  ) : (
+    getInitials()
+  )}
       </button>
 
       {/* Dropdown Menu */}
@@ -118,12 +150,22 @@ export default function SignOut() {
           {/* User Info  */}
           <div className="px-3 py-2 border-b border-gray-200">
             <p className="text-sm font-semibold text-gray-900 ">
-              {getFirstName()}
+              {getDisplayName()}
             </p>
             <p className="text-xs text-gray-500">
               {user.email}
             </p>
           </div>
+          {/* View Profile Button */}
+<button
+  onClick={() => {
+    setIsOpen(false);
+    router.push("/profile");
+  }}
+  className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-gray-50 border-b border-gray-200"
+>
+  View profile
+</button>
 
           {/* Sign Out Button */}
           <button

@@ -15,6 +15,7 @@ export default function RootLayout({ children }) {
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/transactions">Transactions</Link>
           <Link href="/groups">Groups</Link> {/*added Groups link */}
+          <Link href="/profile">Profile</Link>
           </div>
           <SignOut/>
         </nav>
