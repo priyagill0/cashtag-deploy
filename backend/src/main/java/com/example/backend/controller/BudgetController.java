@@ -20,11 +20,9 @@ import com.example.backend.model.Budget;
 import com.example.backend.model.Category;
 import com.example.backend.repository.BadgeRepository;
 import com.example.backend.repository.BudgetRepository;
+import com.example.backend.repository.EarnedBadgeRepository;
 import com.example.backend.repository.ExpenseRepository;
 import com.example.backend.service.BadgeService;
-import com.example.backend.repository.EarnedBadgeRepository;
-import com.example.backend.model.Badge;
-import java.util.Optional;
 
 @CrossOrigin(origins = { "http://localhost:3000" })
 @RestController
@@ -109,6 +107,15 @@ public class BudgetController {
         existingBudget.setCategory(updatedBudget.getCategory());
 
         budgetRepository.save(existingBudget);
+
+       //  check if user is still UNDER ALL BUDGETS for the month. if not, remove this badge.
+       badgeService.checkAndRemoveUnderAllBudgetsBadge(
+        userId,
+        categoryEnum,
+        month,
+        existingBudget.getCurrentAmount()
+    );
+
     }
 
     // post mapping for adding a new budget
@@ -133,6 +140,14 @@ public class BudgetController {
         Budget newBudget = new Budget(budget.getMaxAmount(), currentAmount, budget.getCategory(), budget.getUserId(), budget.getMonth()); // eventually remove expense
         budgetRepository.save(newBudget);
 
+        //  check if user is still UNDER ALL BUDGETS for the month. if not, remove this badge.
+        badgeService.checkAndRemoveUnderAllBudgetsBadge(
+            budget.getUserId(),
+            budget.getCategory(),
+            budget.getMonth(),
+            currentAmount  // This is expensesTotal
+        );
+
         // Check and award badge for adding first budget
         int totalBudgets = budgetRepository.findByUserId(budget.getUserId()).size();
         badgeService.checkAndAwardBadge(
@@ -140,6 +155,7 @@ public class BudgetController {
             BadgeEventType.ADD_BUDGET,
             totalBudgets
         );
+
     }
 
     // This endpoint returns the categories that do not have a budget for the specified user and month.
