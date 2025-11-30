@@ -19,8 +19,10 @@ export default function SignUp() {
         password,
         options: {
         data: {
-          firstname: firstname,  
-          lastname: lastname
+          first_name: firstname,  
+          last_name: lastname,
+          full_name: `${firstname} ${lastname}`.trim(),
+
         }
       }
     });
@@ -45,7 +47,7 @@ export default function SignUp() {
 
 
       // Convert Supabase timestamp to Java LocalDateTime format
-      const created_At = new Date(data.user.created_at).toISOString().slice(0, 19);
+      // const created_At = new Date(data.user.created_at).toISOString().slice(0, 19);
 
       // Save to backend
       const res = await fetch("http://localhost:8080/api/users", {
@@ -56,7 +58,7 @@ export default function SignUp() {
             email: email,
           firstname: firstname,
           lastname: lastname,
-          created_At
+          // created_At
           
         }),
       });
