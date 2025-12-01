@@ -9,6 +9,7 @@ export default function Login() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [messageType, setMessageType] = useState("error");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,8 +28,11 @@ export default function Login() {
       if (error) {
         // Handle specific error cases
         if (error.message.includes("Invalid login credentials")) {
+          setMessageType("error");
           setMessage("Email or password is incorrect. Please try again.");
-        } else if (error.message.includes("Email not confirmed")) {
+        } 
+        else if (error.message.includes("Email not confirmed")) {
+          setMessageType("error");
           setMessage("Please verify your email address before logging in.");
         } else {
           setMessage(`Error: ${error.message}`);
@@ -61,7 +65,7 @@ export default function Login() {
         console.error("Error syncing user:", syncError);
         // Don't block login if sync fails
       }
-      
+      setMessageType("success");
       setMessage("Login successful! Redirecting...");
       
       // Clear form
@@ -120,7 +124,8 @@ export default function Login() {
             />
           </div>
           
-          {message && <p className="text-red-500 text-sm">{message}</p>}
+         {message && (  <p className={`text-sm ${messageType === "success" ? "text-green-500" : "text-red-500"}`}> {message} </p> )}
+
           
           <button
             type="submit"

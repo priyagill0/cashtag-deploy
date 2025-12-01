@@ -28,6 +28,13 @@ export default function GroupDetailsPage() {
   
   const [viewMode] = useState("table");  //originally was going
 
+  // State for debt summary
+  const [debtSummary, setDebtSummary] = useState([]);
+
+  //invite drop down button
+  const [inviteOpen, setInviteOpen] = useState(false);
+
+
   //fetch user's current groups
   useEffect(() => {
     if (id && user?.id) {
@@ -35,6 +42,15 @@ export default function GroupDetailsPage() {
       fetchGroupMembers();
     }
   }, [id, user?.id]);
+
+  // Calculate debt summary whenever expenses change
+  useEffect(() => {
+    if (expenses.length > 0 && groupMembers.length > 0) {
+      calcDebtOverview();
+    } else {
+      setDebtSummary([]);
+    }
+  }, [expenses, groupMembers, user?.id]);
 
   const fetchExpenses = async () => {
     try {
@@ -47,8 +63,8 @@ export default function GroupDetailsPage() {
       });
       if (res.ok) {
         const data = await res.json();
-      console.log(" Fetched expenses:", data);
-      console.log(" Number of expenses:", data.length);
+        console.log("Fetched expenses:", data);
+        console.log("Number of expenses:", data.length);
         setExpenses(data);
       }
     } catch (err) {
@@ -79,9 +95,115 @@ export default function GroupDetailsPage() {
     }
   };
 
+  //Newly added for summaries 
+  // Calculate simplified debt summary using greedy algorithm
+  const calcDebtOverview = () => {
+    const balances = {}; // map for balances per  user
+    // Make balances for all group members
+    groupMembers.forEach(member => {
+      const userId = member.user?.id || member.id;
+      balances[userId] = {
+        name: member.user?.firstname || member.user?.name || member.user?.username || "Unknown",
+        balance: 0
+      };
+    });
+
+    // balance calcuations from  expenses
+    expenses.forEach(expense => {
+      const paidById = expense.paidBy?.id;
+      expense.shares?.forEach(share => {
+        if (!share.settled) {
+          const borrower = share.user?.id; 
+          const amount = share.debt || 0;
+          
+          // If they are owed money, then their balance will increase 
+          if (balances[paidById]) {
+            balances[paidById].balance += amount;
+           }
+          
+          // If they owe more money their balance continues to decrease
+          if (balances[borrower] && borrower !== paidById) {
+            balances[borrower].balance -= amount;
+          }
+        }
+      });
+    });
+
+    
+    const owed = []; //people who gave money +ve balance
+    const borrowers = []; //people took money, -ve balance
+    
+    Object.entries(balances).forEach(([userId, data]) => {
+      if (data.balance > 0.01) {
+        owed.push({ userId, name: data.name, amount: data.balance });
+      } 
+      else if (data.balance < -0.01) {
+        borrowers.push({ userId, name: data.name, amount: Math.abs(data.balance) });
+      }
+    });
+
+    // Sort by largest amount that is owed
+    owed.sort((a, b) => b.amount - a.amount);
+    borrowers.sort((a, b) => b.amount - a.amount);
+
+    const settlements = [];
+    let o = 0, b = 0; //these are just pointers to look through both arrays
+    while (o < owed.length && b < borrowers.length) {
+      const owe = owed[o];
+      const borrow = borrowers[b];
+      const amount = Math.min(owe.amount, borrow.amount);
+
+      if (amount > 0.01) { //mainly for rounding errors 
+        settlements.push({
+          from: borrow.name,
+          to: owe.name,
+          amount: amount,
+          fromId: borrow.userId,
+          toId: owe.userId
+        });
+      }
+
+      // deduct remaining amounts
+      owe.amount -= amount;
+      borrow.amount -= amount;
+
+      if (owe.amount < 0.01) o++;
+      if (borrow.amount < 0.01) b++;
+    }
+
+    setDebtSummary(settlements);
+  };
+
+  // Calculate totals for summary cards
+  const getTotalOwed = () => {
+    let total = 0;
+    expenses.forEach(expense => {
+      expense.shares?.forEach(share => {
+        if (share.user?.id === user?.id && !share.settled && expense.paidBy?.id !== user?.id) {
+          total += share.debt || 0;
+        }
+      });
+    });
+    return total;
+  };
+
+  const getTotalOwedPersonal = () => {
+    let total = 0;
+    expenses.forEach(expense => {
+      if (expense.paidBy?.id === user?.id) {
+        expense.shares?.forEach(share => {
+          if (!share.settled && share.user?.id !== user?.id) {
+            total += share.debt || 0;
+          }
+        });
+      }
+    });
+    return total;
+  };
+
   //Inviting users to group
   const handleInvite = async () => {
-   //validates that input is an email
+    //validates that input is an email
     if (!email.trim()) {
       setMessageType("error");
       setMessage("Please enter an email address.");
@@ -107,23 +229,38 @@ export default function GroupDetailsPage() {
         setMessageType("success");
         setMessage("User invited successfully!");
         setEmail("");
-        fetchGroupMembers();
+        setInviteOpen(false); // Close the dropdown
+        fetchGroupMembers(); //refresh
       } else {
-        //if failed to invite user
-        const errText = await res.text();
-        setMessageType("error");
-        setMessage(`Failed to invite user: ${errText}`);
-      }
-    } catch (err) {
-      //catch network errors
-      console.error("Error inviting user:", err);
+        // Error
+      const errormesg = await res.text();
       setMessageType("error");
-      setMessage("Something went wrong while inviting the user.");
-    } finally {
-      setIsInviting(false);
-      setTimeout(() => setMessage(null), 3000);  // hide after 3s
+      
+      // go through different error types
+      if (res.status === 404) {
+        // User not found
+        setMessage("This user is not registered. Please ask them to sign up first.");
+      } else if (res.status === 409) {
+        // User already a member
+        setMessage("This user is already a member of the group.");
+      } else if (res.status === 400) {
+        // Bad request
+        setMessage("Invalid request. Please check the email and try again.");
+      } else {
+        // Generic error
+        setMessage(errormesg || "Failed to invite user. Please try again.");
+      }
     }
-  };
+  } catch (err) {
+      //catch network errors
+    console.error("Error inviting user:", err);
+    setMessageType("error");
+    setMessage("Something went wrong while inviting the user.");
+  } finally {
+    setIsInviting(false);
+      setTimeout(() => setMessage(null), 3000);  // hide after 3s
+  }
+};
 
 
   const handleSettleShare = async (shareId) => {
@@ -199,7 +336,6 @@ export default function GroupDetailsPage() {
       setTimeout(() => setMessage(null), 3000);
     }
   };
-
   // should be able to delete it
   const handleDeleteExpense = async (expenseId) => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
@@ -230,7 +366,6 @@ export default function GroupDetailsPage() {
     }
   };
 
-  
   const handleEditClick = (expense) => {
     setEditingExpense(expense);
     setIsEditModalOpen(true);
@@ -252,8 +387,44 @@ export default function GroupDetailsPage() {
 
   return (
     <main className="min-h-screen bg-pink-50 p-10">
-        {/* Group Name */}
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">{name || "Group"}</h1>
+      {/* Invite Section */}
+      <h1 className="text-3xl font-bold text-gray-800 mb-2 flex justify-between items-center">
+      {name || "Group"}
+
+      {/* Invite button with dropdown */}
+      <div className="relative">
+        <button
+          onClick={() => setInviteOpen(!inviteOpen)}
+          className="bg-blue-400 text-white px-3 py-2 rounded-md shadow hover:bg-blue-500 text-sm font-semibold border border-transparent"
+        >
+          Invite
+        </button>
+
+        {inviteOpen && (
+          <div className="absolute top-full mt-2 right-0 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-3">
+            <h2 className="text-sm font-semibold mb-2">Invite Members</h2>
+            <div className="flex gap-2 mb-3">
+        <input
+          type="email"
+          placeholder="Enter email"
+          value={email || ""} 
+          onChange={(e) => setEmail(e.target.value)}
+          className="flex-1 px-2 py-1 text-sm border rounded"
+        />
+        <button
+          onClick={handleInvite} 
+          disabled={isInviting || !email.trim()} 
+          className="px-2 py-1 bg-pink-500 text-white text-sm rounded hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isInviting ? "Inviting..." : "Add"}
+        </button>
+      </div>
+          </div>
+        )}
+      </div>
+    </h1>
+      {/* Group Name
+      <h1 className="text-3xl font-bold text-gray-800 mb-2">{name || "Group"}</h1> */}
 
       {/* Message Display */}
       {message && (
@@ -268,6 +439,73 @@ export default function GroupDetailsPage() {
         </div>
       )}
 
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-5 border border-gray-100">
+          <div className="text-sm text-gray-500 mb-1">You Owe</div>
+          <div className="text-2xl font-bold text-red-500">{help(getTotalOwed())}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow-md p-5 border border-gray-100">
+          <div className="text-sm text-gray-500 mb-1">You're Owed</div>
+          <div className="text-2xl font-bold text-green-500">{help(getTotalOwedPersonal())}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow-md p-5 border border-gray-100">
+          <div className="text-sm text-gray-500 mb-1">Total Expenses</div>
+          <div className="text-2xl font-bold text-gray-700">
+            {help(expenses.reduce((sum, exp) => sum + exp.total, 0))}
+          </div>
+        </div>
+      </div>
+
+      {/* Debt Summary */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-100">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Summary</h2>
+        
+        {debtSummary.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-lg font-semibold text-green-600">All Settled!</p>
+            <p className="text-sm text-gray-500 mt-1">No outstanding debts in this group</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {debtSummary.map((settlement, idx) => {
+              const isYouPaying = settlement.fromId === user?.id;
+              const isYouReceiving = settlement.toId === user?.id;
+              
+              return (
+                <div
+                  key={idx}
+                  className={`flex items-center justify-between p-4 rounded-lg border-l-4 ${
+                    isYouPaying
+                      ? "bg-red-50 border-red-400"
+                      : isYouReceiving
+                      ? "bg-green-50 border-green-400"
+                      : "bg-gray-50 border-gray-300"
+                  }`}
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-800">
+                      <span className={isYouPaying ? "text-red-600 font-semibold" : ""}>
+                        {settlement.from}
+                      </span>
+                      <span className="text-gray-500 mx-2">owes</span>
+                      <span className={isYouReceiving ? "text-green-600 font-semibold" : ""}>
+                        {settlement.to}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-gray-800">
+                      {help(settlement.amount)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Group Members Section */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
         <h2 className="text-lg font-semibold mb-3">Group Members ({groupMembers.length})</h2>
@@ -279,7 +517,7 @@ export default function GroupDetailsPage() {
           <div className="space-y-2">
             {groupMembers.map((member) => {
               const memberUser = member.user || member;
-              const memberName = memberUser?.name || memberUser?.username || "Unknown";
+              const memberName = memberUser?.firstname || memberUser?.name || memberUser?.username || "Unknown";
               const memberEmail = memberUser?.email || "No email";
               const memberId = member.id || memberUser?.id;
               const isCurrentUser = memberUser?.id === user?.id;
@@ -303,7 +541,7 @@ export default function GroupDetailsPage() {
         )}
       </div>
 
-    {/* Expenses Section  */}
+      {/* Expenses Section */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-4">
@@ -322,7 +560,7 @@ export default function GroupDetailsPage() {
         ) : expenses.length === 0 ? (
           <p className="text-gray-500">No expenses yet. Add to get started</p>
         ) : viewMode === "table" ? (
-          //  view
+          // table view
           <div className="overflow-x-auto border rounded-2xl">
             <table className="min-w-full border-collapse text-sm">
               <thead className="bg-gray-100 text-gray-800 font-semibold">
@@ -422,7 +660,7 @@ export default function GroupDetailsPage() {
             </table>
           </div>
         ) : (
-          //  view
+          // card view
           <div className="space-y-2">
             {expenses.map((expense) => {
               // Check if current user paid for this expense
@@ -449,7 +687,7 @@ export default function GroupDetailsPage() {
                     <div className="text-right">
                       <p className="font-semibold text-lg">${expense.total?.toFixed(2) || "0.00"}</p>
                       <p className="text-xs text-gray-500">
-                        Paid by {expense.paidBy?.firstname || expense.paidBy?.name || expense.paidBy?.username || `User ${expense.paidByUserId?.slice(0, 8)}...` || "Unknown"}
+                        Paid by {expense.paidBy?.firstname || expense.paidBy?.name || expense.paidBy?.username || "Unknown"}
                       </p>
                     </div>
                   </div>
@@ -458,15 +696,11 @@ export default function GroupDetailsPage() {
                   {expense.shares && expense.shares.length > 0 && (
                     <div className="mt-3 ml-4 space-y-1">
                       {expense.shares.map((share) => {
-                       
                         const isCurrentUserShare = share.user?.id === user?.id;
                         const shareName = share.user?.firstname || share.user?.username || "Unknown";
 
                         return (
-                          <div
-                            key={share.id}
-                            className="flex justify-between items-center text-sm"
-                          >
+                          <div key={share.id} className="flex justify-between items-center text-sm">
                             <span className="text-gray-600">
                               {shareName} owes ${share.debt?.toFixed(2) || "0.00"}
                             </span>
@@ -481,8 +715,8 @@ export default function GroupDetailsPage() {
                               </button>
                             )}
                             
-                            {/* give a label for settled */}
-                            {share.settled && (
+                             {/* give a label for settled */}
+                              {share.settled && (
                               <span className="text-xs text-green-600 font-medium">✓ Settled</span>
                             )}
                           </div>
@@ -513,28 +747,6 @@ export default function GroupDetailsPage() {
             })}
           </div>
         )}
-      </div>
-
-      {/* Invite Section */}
-      <div className="bg-white rounded-lg shadow-md p-4 w-96 relative">
-        <h2 className="text-lg font-semibold mb-2">Invite Members</h2>
-        <div className="flex gap-2 mb-3">
-          <input
-            type="email"
-            placeholder="Enter email to invite"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleInvite()}
-            className="border border-gray-300 rounded-lg p-2 flex-1"
-          />
-          <button
-            onClick={handleInvite}
-            disabled={isInviting}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm disabled:opacity-50"
-          >
-            {isInviting ? "Inviting..." : "Invite"}
-          </button>
-        </div>
       </div>
 
       {/* Add Expense Modal */}
@@ -577,7 +789,8 @@ function AddGroupExpenseModal({
   onExpenseAdded,
   existingExpense = null,
   onExpenseUpdate = null
-}) 
+  }) 
+
   {
   // Check if user is editing
   const isEdit = !!existingExpense;
@@ -589,12 +802,14 @@ function AddGroupExpenseModal({
   const [categories, setCategories] = useState([]);
   const [shares, setShares] = useState([]);
   const [splitType, setSplitType] = useState("equal");
+  const [originalTotal, setOriginalTotal] = useState(""); // keep original total for editing group exepense 
 
-  // NEW: Populate form with existing expense data if editing
+  // Populate form with existing expense data if editing
   useEffect(() => {
     if (isEdit && existingExpense) {
       setDescription(existingExpense.description);
       setTotal(existingExpense.total.toString());
+      setOriginalTotal(existingExpense.total.toString()); // original total
       setDate(existingExpense.date);
       setCategory(existingExpense.category);
       
@@ -606,10 +821,12 @@ function AddGroupExpenseModal({
         })));
         setSplitType("manual"); // Assume manual if editing
       }
-    } else {
+    } 
+    else {
       // Reset form for add mode
       setDescription("");
       setTotal("");
+      setOriginalTotal("");
       setDate(new Date().toLocaleDateString("en-CA"));
       setCategory("");
       setSplitType("equal");
@@ -638,6 +855,31 @@ function AddGroupExpenseModal({
       debt: parseFloat(split.toFixed(2))
     })));
   }, [groupMembers, total, splitType, isEdit]);
+
+  // New update: previously when u edited the expense you had to manually edit each individual contribution to make it balanced this makes it automatic
+  //but you can still choose to edit it individually if you want
+  // adjust shares
+  const handleTotalChange = (newTotal) => {
+    setTotal(newTotal);
+    
+    // Only adjust in edit mode when total changes and shares arent empty
+    if (isEdit && originalTotal && newTotal && shares.length > 0) { 
+      const oldTotal = parseFloat(originalTotal);
+      const updatedTotal = parseFloat(newTotal);
+      
+      if (oldTotal > 0 && updatedTotal > 0) {
+        const ratio = updatedTotal / oldTotal;
+        
+        //  adjust share per user
+        const updatedShares = shares.map(s => ({ ...s,
+          debt: parseFloat((s.debt * ratio).toFixed(2)) //round to 2 decimals but convert back to int with parse
+        }));
+        
+        setShares(updatedShares);
+        setOriginalTotal(newTotal); // Update the reference total
+      }
+    }
+  };
 
   const handleShareChange = (userId, value) => {
     setShares(prev => prev.map(s => s.userId === userId ? { ...s, debt: parseFloat(value) || 0 } : s));
@@ -709,25 +951,46 @@ function AddGroupExpenseModal({
 
         {/* Form for adding/editing an expense */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <input type="text" 
-          placeholder="Description" 
-          value={description} onChange={e => setDescription(e.target.value)} 
-          className="border p-2 rounded w-full" required />
+          <input 
+            type="text" 
+            placeholder="Description" 
+            value={description} 
+            onChange={e => setDescription(e.target.value)} 
+            className="border p-2 rounded w-full" 
+            required 
+          />
 
-          <input type="number" 
-          placeholder="Total" step="0.01" 
-          value={total} onChange={e => setTotal(e.target.value)}
-           className="border p-2 rounded w-full" required />
-          <select value={category} 
-          onChange={e => setCategory(e.target.value)} 
-          className="border p-2 rounded w-full" required>
+          <input 
+            type="number" 
+            placeholder="Total" 
+            step="0.01" 
+            value={total} 
+            onChange={e => handleTotalChange(e.target.value)}
+            className="border p-2 rounded w-full" 
+            required 
+          />
+          
+          <select 
+            value={category} 
+            onChange={e => setCategory(e.target.value)} 
+            className="border p-2 rounded w-full" 
+            required
+          >
             <option value="">Select Category</option>
-            {categories.map((cat, i) => <option key={i} value={cat}>{cat.charAt(0).toUpperCase()+cat.slice(1).toLowerCase()}</option>)}
+            {categories.map((cat, i) => (
+              <option key={i} value={cat}>
+                {cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase()}
+              </option>
+            ))}
           </select>
 
-          <input type="date" value={date}
-           onChange={e => setDate(e.target.value)} 
-           className="border p-2 rounded w-full" required />
+          <input 
+            type="date" 
+            value={date}
+            onChange={e => setDate(e.target.value)} 
+            className="border p-2 rounded w-full" 
+            required 
+          />
 
           {/* Split cost */}
           <div>
@@ -760,7 +1023,7 @@ function AddGroupExpenseModal({
               const member = groupMembers.find(m => (m.user?.id || m.id) === s.userId);
               const memberUser = member?.user || member;
               return (
-              <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                   <span>{memberUser?.firstname || memberUser?.name || "Unknown"}</span>
                   <input
                     type="number"
@@ -781,29 +1044,29 @@ function AddGroupExpenseModal({
               <span className={isBalanced ? "text-green-600" : "text-red-600"}>
                 Total: ${totalSplit.toFixed(2)} / ${parseFloat(total).toFixed(2)}
                 {!isBalanced && " Not balanced"}
-                </span>
-                </div>
-                )}
-                <div className="flex justify-end gap-3 mt-4">
-        <button 
-          type="button" 
-          onClick={onClose} 
-          className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-        >
-          Cancel
-        </button>
-        <button 
-          type="submit" 
-          disabled={!isBalanced}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {/*Button text changes based on mode */}
-          {isEdit ? "Update Expense" : "Add Expense"}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-  )
-  }
+              </span>
+            </div>
+          )}
 
+          <div className="flex justify-end gap-3 mt-4">
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={!isBalanced}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+            {/*Button text changes based on mode */}
+            {isEdit ? "Update Expense" : "Add Expense"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

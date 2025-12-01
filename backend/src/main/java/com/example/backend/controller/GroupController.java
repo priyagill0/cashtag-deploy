@@ -120,6 +120,12 @@ public class GroupController {
         String email = req.get("email");
         UUID groupId = UUID.fromString(req.get("groupId"));
         // UUID inviterId = UUID.fromString(req.get("inviterId")); // need inviterId from frontend
+         // Check if the user exists
+    Optional<User> userOptional = userRepo.findByEmail(email);
+    if (userOptional.isEmpty()) {
+        // Return 404 instead of throwing exception
+        return ResponseEntity.status(404).body("User not registered");
+    }
         User user = userRepo.findByEmail(email).orElseThrow();
         Group group = groupRepo.findById(groupId).orElseThrow();
 
@@ -130,6 +136,8 @@ public class GroupController {
         if (knownMember) {
             return ResponseEntity.badRequest().body("User is already a member");
         }
+        
+        
         GroupMember member = new GroupMember();
         member.setGroup(group);
         member.setUser(user);

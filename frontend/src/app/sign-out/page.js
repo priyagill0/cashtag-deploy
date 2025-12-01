@@ -114,7 +114,7 @@ const getDisplayName = () => {
     .map((n) => n[0])
     .join("")
     .toUpperCase();
-};
+    };
 
   if (!user) return null;
 
@@ -138,15 +138,15 @@ const getDisplayName = () => {
       src={avatarUrl}
       alt="Profile"
       className="w-full h-full rounded-full object-cover"
-    />
-  ) : (
-    getInitials()
-  )}
+        />
+    ) : (
+        getInitials()
+    )}
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200">
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-1">
           {/* User Info  */}
           <div className="px-3 py-2 border-b border-gray-200">
             <p className="text-sm font-semibold text-gray-900 ">
@@ -157,15 +157,15 @@ const getDisplayName = () => {
             </p>
           </div>
           {/* View Profile Button */}
-<button
-  onClick={() => {
-    setIsOpen(false);
-    router.push("/profile");
-  }}
-  className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-gray-50 border-b border-gray-200"
->
-  View profile
-</button>
+        <button
+        onClick={() => {
+            setIsOpen(false);
+            router.push("/profile");
+        }}
+        className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-gray-50 border-b border-gray-200"
+        >
+        View profile
+        </button>
 
           {/* Sign Out Button */}
           <button
