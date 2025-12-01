@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,10 +14,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PutMapping;
 import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -30,6 +33,13 @@ public class UserController {
         
         this.userRepository = userRepository;
         this.earnedBadgeRepository = earnedBadgeRepository;
+    }
+     @GetMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestParam String email) {
+        boolean exists = userRepository.existsByEmail(email);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("exists", exists);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping

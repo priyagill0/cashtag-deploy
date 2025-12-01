@@ -23,6 +23,8 @@ public class User {
     // private String username;
     private String firstname;
     private String lastname;
+    
+    @Column(unique = true, nullable = false) // Makes email unique
     private String email;
 
     @Column(name = "created_at", updatable = false)
