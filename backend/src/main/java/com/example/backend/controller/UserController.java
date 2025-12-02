@@ -1,18 +1,25 @@
 package com.example.backend.controller;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
+
+import org.springframework.http.ResponseEntity;
+import com.example.backend.repository.EarnedBadgeRepository;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-
+import org.springframework.web.bind.annotation.PutMapping;
 import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
-//import java.util.UUID;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -20,10 +27,19 @@ import com.example.backend.repository.UserRepository;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final EarnedBadgeRepository earnedBadgeRepository;
 
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository, EarnedBadgeRepository earnedBadgeRepository) {
         
         this.userRepository = userRepository;
+        this.earnedBadgeRepository = earnedBadgeRepository;
+    }
+     @GetMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestParam String email) {
+        boolean exists = userRepository.existsByEmail(email);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("exists", exists);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
@@ -36,70 +52,50 @@ public class UserController {
     public User createUser(@RequestBody User user) {
         System.out.println("\nSaving user to database...\n");
         System.out.println("Received user ID: " + user.getId());  // debug
-        System.out.println("User email: " + user.getEmail()); //debugging
+        System.out.println("User email: " + user.getEmail()); 
+        if (user.getCreatedAt() == null) {
+            user.setCreatedAt(LocalDateTime.now());
+        }
         return userRepository.save(user);
     }
+    
+    @PutMapping("/{user_id}")
+public ResponseEntity<User> updateUser(
+        @PathVariable("user_id") UUID userId,
+        @RequestBody User newData) {
+
+    return userRepository.findById(userId)
+            .map(user -> {
+                user.setFirstname(newData.getFirstname());
+                user.setLastname(newData.getLastname());
+                return ResponseEntity.ok(userRepository.save(user));
+            })
+            .orElse(ResponseEntity.notFound().build());
 }
-// package com.example.backend.controller;
 
-// import com.example.backend.model.User;
-// import com.example.backend.repository.UserRepository;
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.http.ResponseEntity;
-// import org.springframework.web.bind.annotation.*;
 
-// import java.util.UUID;
+    @GetMapping("/{user_id}")
+public ResponseEntity<User> getUserById(@PathVariable("user_id") UUID userId) {
+    return userRepository.findById(userId)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+}
 
-// @RestController
-// @RequestMapping("/api/users")
-// @CrossOrigin(origins = "http://localhost:3000")
-// public class UserController {
-    
-//     @Autowired
-//     private UserRepository userRepository;
-    
-//     @PostMapping
-//     public ResponseEntity<User> createUser(@RequestBody UserRequest request) {
-//         try {
-//             // Convert String UUID to UUID object
-//             UUID userId = UUID.fromString(request.getId());
-            
-//             User user = new User(
-//                 userId,
-//                 request.getEmail(),
-//                 request.getFirstname(),
-//                 request.getLastname()
-//             );
-            
-//             User savedUser = userRepository.save(user);
-//             return ResponseEntity.ok(savedUser);
-            
-//         } catch (IllegalArgumentException e) {
-//             return ResponseEntity.badRequest().build();
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//             return ResponseEntity.status(500).build();
-//         }
-//     }
-    
-//     // Helper class to receive JSON
-//     public static class UserRequest {
-//         private String id;
-//         private String email;
-//         private String firstname;
-//         private String lastname;
         
-//         // Getters & Setters
-//         public String getId() { return id; }
-//         public void setId(String id) { this.id = id; }
-        
-//         public String getEmail() { return email; }
-//         public void setEmail(String email) { this.email = email; }
-        
-//         public String getFirstname() { return firstname; }
-//         public void setFirstname(String firstname) { this.firstname = firstname; }
-        
-//         public String getLastname() { return lastname; }
-//         public void setLastname(String lastname) { this.lastname = lastname; }
-//     }
-// }
+    @GetMapping("/{user_id}/streak")
+    public int getUserStreak(@PathVariable("user_id") UUID userId) {
+        var user =  userRepository.findById(userId);
+        if (user.isPresent()) {
+            return user.get().getCurrentStreak();
+        } else {
+            return 1; // default streak
+        }
+    }
+
+    @GetMapping("/{user_id}/badges")
+public ResponseEntity<?> getUserBadges(@PathVariable("user_id") UUID userId) {
+    var badges = earnedBadgeRepository.findByUserId(userId);
+    return ResponseEntity.ok(badges);
+}
+
+}

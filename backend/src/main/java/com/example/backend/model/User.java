@@ -1,12 +1,11 @@
 package com.example.backend.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -17,17 +16,25 @@ public class User {
     // @Id
     // @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
-    @Column(columnDefinition = "UUID,  updatable = false, nullable = false")
+    @Column(columnDefinition = "UUID",  updatable = false, nullable = false)
     //@GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     // private String username;
     private String firstname;
     private String lastname;
+    
+    @Column(unique = true, nullable = false) // Makes email unique
     private String email;
 
-     @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt; 
+
+    @Column(name = "last_login_date")
+    private LocalDate lastLoginDate;
+     
+    @Column(name = "current_streak", nullable = false, columnDefinition = "int default 0")
+    private int currentStreak = 0;
 
     // Constructors
     public User() {}
@@ -55,4 +62,10 @@ public class User {
     public void setEmail(String email) { this.email = email; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDate getLastLoginDate() { return lastLoginDate; }
+    public void setLastLoginDate(LocalDate lastLoginDate) { this.lastLoginDate = lastLoginDate; }
+
+    public int getCurrentStreak() { return currentStreak; }
+    public void setCurrentStreak(int currentStreak) { this.currentStreak = currentStreak; }
 }

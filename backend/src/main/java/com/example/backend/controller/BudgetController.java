@@ -15,11 +15,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.backend.model.BadgeEventType;
 import com.example.backend.model.Budget;
 import com.example.backend.model.Category;
+import com.example.backend.repository.BadgeRepository;
 import com.example.backend.repository.BudgetRepository;
+import com.example.backend.repository.EarnedBadgeRepository;
 import com.example.backend.repository.ExpenseRepository;
-
+import com.example.backend.service.BadgeService;
 
 @CrossOrigin(origins = { "http://localhost:3000" })
 @RestController
@@ -27,21 +30,47 @@ import com.example.backend.repository.ExpenseRepository;
 public class BudgetController {
     private final BudgetRepository budgetRepository;
     private final ExpenseRepository expenseRepository;
+    private final BadgeService badgeService;
+    private final BadgeRepository badgeRepository;
+    private final EarnedBadgeRepository earnedBadgeRepository;
 
-    public BudgetController(BudgetRepository budgetRepository, ExpenseRepository expenseRepository) {
+    public BudgetController(BudgetRepository budgetRepository, ExpenseRepository expenseRepository, BadgeService badgeService, BadgeRepository badgeRepository, EarnedBadgeRepository earnedBadgeRepository) {
         this.budgetRepository = budgetRepository;
         this.expenseRepository = expenseRepository;
+        this.badgeService = badgeService;
+        this.badgeRepository = badgeRepository;
+        this.earnedBadgeRepository = earnedBadgeRepository;
     }
 
     @GetMapping(value = "/user/{userId}")
     public List<Budget> getAllBudgetsByUser( @PathVariable UUID userId ) {
         return budgetRepository.findByUserId(userId);
     }
+
     // get all user budgets for specific month, e.g., 2024-06
-    @GetMapping(value = "/user/{userId}/{month}") 
-    public List<Budget> getBudgetsByUserAndMonth( @PathVariable UUID userId, @PathVariable String month ) {
-        return budgetRepository.findByUserIdAndMonth(userId, month, Sort.by("category").ascending());
+    @GetMapping(value = "/user/{userId}/{month}")
+    public List<Budget> getBudgetsByUserAndMonth(@PathVariable UUID userId, @PathVariable String month) {
+        List<Budget> budgets = budgetRepository.findByUserIdAndMonth(userId, month, Sort.by("category").ascending());
+    
+        boolean allUnderLimit = budgets.stream()
+        .allMatch(b -> b.getCurrentAmount() <= b.getMaxAmount());
+    
+        try {
+            badgeRepository.findByEventType(BadgeEventType.UNDER_ALL_BUDGETS).ifPresent(badge -> {
+                boolean hasBadge = earnedBadgeRepository.existsByUserIdAndBadgeId(userId, badge.getId());
+                if (allUnderLimit && !hasBadge) {
+                    badgeService.checkAndAwardBadge(userId, BadgeEventType.UNDER_ALL_BUDGETS, 0);
+                } else if (!allUnderLimit && hasBadge) {
+                    earnedBadgeRepository.deleteByUserIdAndBadgeId(userId, badge.getId());
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("Badge check failed: " + e.getMessage());
+        }
+    
+        return budgets;
     }
+    
     // get a specific user budget for given month and category, e.g., 2024-06 and SHOPPING
     @GetMapping(value = "/user/{userId}/{month}/{category}")
     public List<Budget> getBudgetsByUserAndMonthAndCategory( @PathVariable UUID userId, @PathVariable String month, @PathVariable String category ) {
@@ -78,6 +107,15 @@ public class BudgetController {
         existingBudget.setCategory(updatedBudget.getCategory());
 
         budgetRepository.save(existingBudget);
+
+       //  check if user is still UNDER ALL BUDGETS for the month. if not, remove this badge.
+       badgeService.checkAndRemoveUnderAllBudgetsBadge(
+        userId,
+        categoryEnum,
+        month,
+        existingBudget.getCurrentAmount()
+    );
+
     }
 
     // post mapping for adding a new budget
@@ -101,6 +139,23 @@ public class BudgetController {
                 
         Budget newBudget = new Budget(budget.getMaxAmount(), currentAmount, budget.getCategory(), budget.getUserId(), budget.getMonth()); // eventually remove expense
         budgetRepository.save(newBudget);
+
+        //  check if user is still UNDER ALL BUDGETS for the month. if not, remove this badge.
+        badgeService.checkAndRemoveUnderAllBudgetsBadge(
+            budget.getUserId(),
+            budget.getCategory(),
+            budget.getMonth(),
+            currentAmount  // This is expensesTotal
+        );
+
+        // Check and award badge for adding first budget
+        int totalBudgets = budgetRepository.findByUserId(budget.getUserId()).size();
+        badgeService.checkAndAwardBadge(
+            budget.getUserId(),
+            BadgeEventType.ADD_BUDGET,
+            totalBudgets
+        );
+
     }
 
     // This endpoint returns the categories that do not have a budget for the specified user and month.

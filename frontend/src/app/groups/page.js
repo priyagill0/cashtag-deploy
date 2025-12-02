@@ -8,6 +8,9 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState([]);
   const [newGroupName, setNewGroupName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState("success");
+
 
   //const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba"; 
   const { user, loading } = useAuth("/login");

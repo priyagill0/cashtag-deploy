@@ -48,4 +48,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
         @Param("category") Category category,
         @Param("month") String month
     );
+    // Count # of expenses by userId
+    int countByUserId(UUID userId);
 }

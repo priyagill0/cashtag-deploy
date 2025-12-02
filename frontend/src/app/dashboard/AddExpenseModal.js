@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useAuth } from "../../hooks/useAuth"; // import your auth hook 
 
 
 export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
@@ -11,6 +12,7 @@ export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
  const [category, setCategory] = useState("");
  const [categories, setCategories] = useState([]); // this holds all categories fetched from the backend
  const [isRecurring, setIsRecurring] = useState(false); //for the recurring expense button
+ const { user, loading } = useAuth("/login");
 
 
  //when popup opens, fetch list of tags
@@ -26,6 +28,8 @@ export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
 
  //submit the form
  const handleSubmit = async (e) => {
+  if (!user?.id) return; 
+
    e.preventDefault();
 
 
@@ -33,8 +37,8 @@ export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
      description: title,
      amount: parseFloat(amount),
      category: category.toUpperCase(),
-     date: new Date().toISOString().split("T")[0],
-     userId: "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba",
+     date:  new Date().toLocaleDateString("en-CA", { timeZone: "America/Toronto",}),
+     userId: user?.id, //"6899c10f-f3e4-4101-b7fe-c72cbe0e07ba"
      recurring: isRecurring,
    };
 

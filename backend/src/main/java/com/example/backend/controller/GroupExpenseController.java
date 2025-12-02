@@ -18,10 +18,13 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.Map;
 import java.util.stream.Collectors; 
+import java.util.Set;
+
 
 @RestController
 @RequestMapping("/api/group-expense")
@@ -243,38 +246,55 @@ public class GroupExpenseController {
     }
 
     //update expense similar to expense controller but this time update shares too 
-    @PutMapping("/{expenseId}")
-    public ResponseEntity<?> updateExpense( @PathVariable UUID expenseId, @RequestBody Map<String, Object> total) {
-
+    //original function didnt work bec it was deleting list instead of updating and a new list is not needed
+   @PutMapping("/{expenseId}")
+    public ResponseEntity<?> updateExpense(@PathVariable UUID expenseId, @RequestBody Map<String, Object> total) {
     try {
         GroupExpense expense = groupExpenseRepository.findById(expenseId).orElseThrow();
+        
         // Update expense fields
         expense.setDescription((String) total.get("description"));
         expense.setTotal(((Number) total.get("total")).doubleValue());
         expense.setCategory((String) total.get("category"));
         expense.setDate(LocalDate.parse((String) total.get("date")));
 
-        //Update shares if needed
+        // Update shares if needed
         List<Map<String, Object>> sharesData = (List<Map<String, Object>>) total.get("shares");
         if (sharesData != null) {
-            List<SharedExpense> updatedShares = new ArrayList<>();
+            // Get the existing shares collection 
+            List<SharedExpense> existingShares = expense.getShares();
+            
+            // Map of existing shares by userId for quick lookup
+            Map<UUID, SharedExpense> existingSharesMap = existingShares.stream().collect(Collectors.toMap(s -> s.getUser().getId(), s -> s));
+
+            // Track which shares we want to keep
+            Set<UUID> userIdsToKeep = new HashSet<>();
+
             for (Map<String, Object> shareData : sharesData) {
                 UUID userId = UUID.fromString((String) shareData.get("userId"));
-                User user = userRepository.findById(userId).orElseThrow();
+                User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
-                SharedExpense share = expense.getShares().stream()
-                        .filter(s -> s.getUser().getId().equals(userId))
-                        .findFirst()
-                        .orElse(new SharedExpense());
+                userIdsToKeep.add(userId);
 
-                share.setExpense(expense);
-                share.setUser(user);
-                share.setDebt(((Number) shareData.get("debt")).doubleValue());
-                share.setSettled(false);
-                updatedShares.add(share);
+                if (existingSharesMap.containsKey(userId)) {
+                    // Update existing share
+                    SharedExpense share = existingSharesMap.get(userId);
+                    share.setDebt(((Number) shareData.get("debt")).doubleValue());
+                    share.setSettled(false);
+                } else {
+                    // Add new share to the already existing collection
+                    SharedExpense newShare = new SharedExpense();
+                    newShare.setExpense(expense);
+                    newShare.setUser(user);
+                    newShare.setDebt(((Number) shareData.get("debt")).doubleValue());
+                    newShare.setSettled(false);
+                    existingShares.add(newShare);
+                }
             }
-            sharedExpenseRepository.saveAll(updatedShares);
-            expense.setShares(updatedShares);
+
+            // Remove shares that are no longer in the request
+            // Use removeIf to modify the existing collection
+            existingShares.removeIf(share -> !userIdsToKeep.contains(share.getUser().getId()));
         }
 
         // Save it
