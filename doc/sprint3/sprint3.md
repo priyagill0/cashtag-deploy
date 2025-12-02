@@ -1,4 +1,4 @@
-# **Sprint 2**
+# **Sprint 3**
 
 Sprint Goal:  
 Our goal is to add the badges, end of month report as well as dynamic handling for monthly group expenses.
@@ -33,9 +33,9 @@ Participants Participants: Priya Gill, Eesha Fawad, Abrar Kassim, Ashal Iman, Me
 
 | Story ID | Task Description | Owner | Estimated Hours |
 | ----- | ----- | ----- | ----- |
-| [E3TXS-21](https://eecs-3311-team-x.atlassian.net/browse/E3TXS-21) | Enable users to sign out from the profile icon in the top right corner | Abrar Kassim | 3 |
+| [E3TXS-21](https://eecs-3311-team-x.atlassian.net/browse/E3TXS-21) | Enable users to sign out from the profile icon in the top right corner | Abrar Kassim | 2 |
 | [E3TXS-28](https://eecs-3311-team-x.atlassian.net/browse/E3TXS-28) | Allow users to view history of their budgets | Melanie-Jane Mushayev | 4 |
-| [E3TXS-30](https://eecs-3311-team-x.atlassian.net/browse/E3TXS-30) | Allow users to calculate and summarize who owes who within their group and have everyone see final amounts. Debts automatically get calculated when a group expense is added or deleted. | Abrar Kassim | 4 |
+| [E3TXS-30](https://eecs-3311-team-x.atlassian.net/browse/E3TXS-30) | Allow users to calculate and summarize who owes who within their group and have everyone see final amounts. Debts automatically get calculated when a group expense is added or deleted. | Abrar Kassim | 5 |
 | [E3TXS-31](https://eecs-3311-team-x.atlassian.net/browse/E3TXS-31) | Get users to see all their badges and achievements through a link through profile page | Priya Gill | 4 |
 | [E3TXS-32](https://eecs-3311-team-x.atlassian.net/browse/E3TXS-32) | Allows users to get a notification on the dashboard when they are 80-90% of their budget. | Melanie-Jane Mushayev | 3 |
 | [E3TXS-33](https://eecs-3311-team-x.atlassian.net/browse/E3TXS-33) | Allow users to generate an end-of-month spending report that compares current month to previous months | Eesha Fawad | 5 |
