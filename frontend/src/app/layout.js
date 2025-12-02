@@ -16,7 +16,6 @@ export default function RootLayout({ children }) {
           <Link href="/transactions">Transactions</Link>
           <Link href="/groups">Groups</Link>
           <Link href="/reports">Reports</Link>
-          <Link href="/groups">Groups</Link> {/*added Groups link */}
           <Link href="/budgets">Budgets</Link>
           <Link href="/profile">Profile</Link>
           </div>

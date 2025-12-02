@@ -306,7 +306,7 @@ export default function ProfilePage() {
     .join("")
     .toUpperCase();
 
-  const badgesToShow = badges.slice(0, 3);
+  const badgesToShow = badges.slice(0, 5);
 
   // account created: backend createdAt OR Supabase created_at
   const accountCreated = profile.createdAt || user?.created_at || null;
