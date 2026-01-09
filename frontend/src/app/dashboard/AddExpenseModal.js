@@ -18,7 +18,7 @@ export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
  //when popup opens, fetch list of tags
  useEffect(() => {
    if (isOpen) {
-     fetch("http://localhost:8080/api/categories") // backend endpoint to get categories
+     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/categories`) // backend endpoint to get categories
        .then((res) => res.json()) // convert the response to JSON
        .then((data) => setCategories(data)) // save the data in `categories` state
        .catch((err) => console.error("Error fetching categories", err)); // handle any network errors
@@ -44,7 +44,7 @@ export default function AddExpenseModal({ isOpen, onClose, onExpenseAdded }) {
 
 
    try {
-     const res = await fetch("http://localhost:8080/api/expense", {
+     const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/expense`, {
        method: "POST",
        headers: { "Content-Type": "application/json" },
        body: JSON.stringify(expense),

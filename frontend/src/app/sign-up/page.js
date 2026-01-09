@@ -18,7 +18,7 @@ export default function SignUp() {
     //valid format 
     if (newEmail && newEmail.includes("@")) {
       try {
-        const res = await fetch(`http://localhost:8080/api/users/check-email?email=${encodeURIComponent(newEmail)}`); 
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/check-email?email=${encodeURIComponent(newEmail)}`); 
         //backend endpoint expects the email as a query parameter so it needs to be like this ^^
         if (res.ok) {
           const data = await res.json();
@@ -72,7 +72,7 @@ export default function SignUp() {
       }
 
       // Save to backend
-      const res = await fetch("http://localhost:8080/api/users", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

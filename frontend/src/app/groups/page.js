@@ -25,7 +25,7 @@ useEffect(() => {
      
 
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:8080/api/groups/user/${user.id}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/groups/user/${user.id}`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -65,7 +65,7 @@ useEffect(() => {
     try {
       setIsCreating(true);
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/groups/create", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/groups/create`, {
 
         method: "POST",
         headers: { 

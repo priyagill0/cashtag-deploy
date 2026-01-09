@@ -75,7 +75,7 @@ const viewLabel = useMemo(() => {
  useEffect(() => {
   //  const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
   if (!user?.id) return; 
-  fetch(`http://localhost:8080/api/expense/user/${user?.id}?all=true`)
+  fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/expense/user/${user?.id}?all=true`)
      .then((res) => res.json())
      .then((data) => setExpenses(data))
      .catch((err) => console.error("Error fetching expenses:", err));
@@ -96,7 +96,7 @@ useEffect(() => {
   // const userId = "6899c10f-f3e4-4101-b7fe-c72cbe0e07ba";
   const month = selectedMonth || new Date().toISOString().slice(0,7); // YYYY-MM
   if (!user?.id) return; 
-  fetch(`http://localhost:8080/api/budget/user/${user?.id}/${month}`)
+  fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/budget/user/${user?.id}/${month}`)
     .then((response) => response.json())
     .then((data) => setBudgets(data))
     .catch((err) => console.error("Error fetching budgets:", err));
@@ -142,7 +142,7 @@ useEffect(() => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/expense/${expenseId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/expense/${expenseId}`, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -338,7 +338,7 @@ useEffect(() => {
                 if (!confirm("Are you sure you want to delete this budget?")) return;
                 if (!user?.id) return; 
                 await fetch(
-                  `http://localhost:8080/api/budget/user/${user?.id}/${budget.month}/${category}`,
+                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/budget/user/${user?.id}/${budget.month}/${category}`,
                   { method: "DELETE" }
                 );
                 setRefresh(prev => !prev);

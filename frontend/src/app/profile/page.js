@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../utils/supabase/client";
 
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`;
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -75,7 +75,7 @@ export default function ProfilePage() {
 
         // 2) Badges
         const badgesRes = await fetch(
-          `http://localhost:8080/api/badge/user/${user.id}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/badge/user/${user.id}`
         );
         if (badgesRes.ok) {
           const badgesData = await badgesRes.json();

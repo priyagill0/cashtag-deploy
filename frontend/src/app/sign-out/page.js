@@ -51,7 +51,7 @@ export default function SignOut() {
     const fetchUserData = async () => {
       if (user?.id) {
         try {
-          const res = await fetch(`http://localhost:8080/api/users/${user.id}`);
+          const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/${user.id}`);
           if (res.ok) {
             const data = await res.json();
             setUserData(data);

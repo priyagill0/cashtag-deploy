@@ -44,7 +44,7 @@ export default function Login() {
       // sync to backend
       const user = data.user;
       try {
-        const syncResponse = await fetch("http://localhost:8080/api/groups/users/sync", {
+        const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/groups/users/sync`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

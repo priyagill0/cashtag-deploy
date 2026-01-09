@@ -19,7 +19,7 @@ export default function UserBadges() {
 
         if (!user?.id) return; 
 
-        const res = await fetch(`http://localhost:8080/api/badge/user/${user?.id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/badge/user/${user?.id}`);
         if (!res.ok) throw new Error("Failed to fetch earned badges");
 
         const data = await res.json();
@@ -40,7 +40,7 @@ export default function UserBadges() {
   useEffect(() => {
     async function fetchUser() {
         if (user) {
-            try { fetch(`http://localhost:8080/api/users/${user.id}/streak`)
+            try { fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/${user.id}/streak`)
             .then((res) => res.json())
             .then((data) => {
             console.log("Fetched user streak:", data);

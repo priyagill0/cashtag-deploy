@@ -56,7 +56,7 @@ export default function GroupDetailsPage() {
     try {
       setIsLoadingExpenses(true);
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/group-expense/group/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/group-expense/group/${id}`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -78,7 +78,7 @@ export default function GroupDetailsPage() {
     try {
       setIsLoadingMembers(true);
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/groups/${id}/members`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/groups/${id}/members`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -215,7 +215,7 @@ export default function GroupDetailsPage() {
       setIsInviting(true);
       const token = localStorage.getItem("token");
       //Call backend to invite the user to this group
-      const res = await fetch("http://localhost:8080/api/groups/invite", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/groups/invite`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -266,7 +266,7 @@ export default function GroupDetailsPage() {
   const handleSettleShare = async (shareId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/group-expense/share/${shareId}/settle`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/group-expense/share/${shareId}/settle`, {
         method: "PUT",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -295,7 +295,7 @@ export default function GroupDetailsPage() {
   const handleExpenseUpdate = async (expenseId, updatedData) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/group-expense/${expenseId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/group-expense/${expenseId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -342,7 +342,7 @@ export default function GroupDetailsPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/group-expense/${expenseId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/group-expense/${expenseId}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -837,7 +837,7 @@ function AddGroupExpenseModal({
   // Fetch categories 
   useEffect(() => {
     if (!isOpen) return;
-    fetch("http://localhost:8080/api/categories")
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/categories`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(err => console.error(err));
@@ -911,7 +911,7 @@ function AddGroupExpenseModal({
       // Add new expense
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:8080/api/group-expense/group/${groupId}/add`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/group-expense/group/${groupId}/add`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
           body: JSON.stringify(dataStruct)

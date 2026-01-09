@@ -13,7 +13,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onExpenseUp
       setTitle(expense.description);
       setAmount(expense.amount);
       setCategory(expense.category);
-      fetch("http://localhost:8080/api/categories")
+      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/categories`)
         .then((res) => res.json())
         .then((data) => setCategories(data))
         .catch((err) => console.error("Error fetching categories", err));
@@ -32,7 +32,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onExpenseUp
     };
 
     try {
-      const res = await fetch(`http://localhost:8080/api/expense/${expense.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/expense/${expense.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedExpense),
